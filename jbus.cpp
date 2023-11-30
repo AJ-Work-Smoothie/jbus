@@ -69,27 +69,27 @@ byte* jbus::poll(int msgLen)
 
 }
 
-bool jbus::send(byte arr[], int msgSize)
+bool jbus::send(byte arr[], int msgLen)
 {
   // arr is the message we want to send. We create an array that is +3 bigger for 
   // MSGstart, checksum, and MSGend
-  int finalPacketLen = msgSize + 3;
-  byte packetToSend[finalPacketLen];
+  int packetLen = msgLen + 3;
+  byte packet[packetLen];
 
-  for (int i = 0; i < finalPacketLen; i++)
-    packetToSend[i] = 0; // initialize all values to 0
+  for (int i = 0; i < packetLen; i++)
+    packet[i] = 0; // initialize all values to 0
 
-  packetToSend[0] = MSGSTART;
-  for (int i = 1; i < msgSize + 1; i++ ) 
-    packetToSend[i] = arr[i - 1]; // copies arr into outgoing packet
-  for (int i = 0; i < finalPacketLen - 2; i++) 
-    packetToSend[finalPacketLen - 2] ^= packetToSend[i]; // simple XOR checksum  
-  packetToSend[finalPacketLen - 1] = MSGEND; // remember, zero indexed
-  cereal.write(packetToSend, finalPacketLen);
+  packet[0] = MSGSTART;
+  for (int i = 1; i < msgLen + 1; i++ ) 
+    packet[i] = arr[i - 1]; // copies arr into outgoing packet
+  for (int i = 0; i < packetLen - 2; i++) 
+    packet[packetLen - 2] ^= packet[i]; // simple XOR checksum  
+  packet[packetLen - 1] = MSGEND; // remember, zero indexed
+  cereal.write(packet, packetLen);
 
-  for (int i = 0; i < finalPacketLen; i++)
+  for (int i = 0; i < packetLen; i++)
     {
-      Serial.print(packetToSend[i]);
+      Serial.print(packet[i]);
       Serial.print(" ");
     }
   Serial.println();

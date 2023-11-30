@@ -17,8 +17,9 @@ class jbus
   public:
     jbus(); 
     void init(unsigned long buad);
-    byte* poll(int msgLen);  // looking for a single msg
-    bool send(byte arr[], int msgSize); // send packet
+    // Polls for a message of a specific length. Pass in the length of the message
+    byte* poll(int msgLen);  
+    bool send(byte arr[], int msgLen); // send packet
     byte* transceive(byte arr[], int arrLen); // sends msgs, returns response
   
 
