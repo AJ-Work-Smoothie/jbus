@@ -1,0 +1,5 @@
+{
+    "port": "COM4",
+    "board": "P1AM-100:samd:P1AM-100_native",
+    "sketch": "jbus.ino"
+}
