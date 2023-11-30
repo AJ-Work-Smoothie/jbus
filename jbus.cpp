@@ -14,14 +14,17 @@ void jbus::init(unsigned long buad)
 
 byte* jbus::poll(int msgLen)
 {
-  static byte packet[20];
-  for (int i = 0; i < msgLen; i++) packet[i] = 0; // erase all contects of packet
+  // we pass in the msgLen, so the array len is msgLen+3 (MSGstart, checksum, MSGend)
+  static int arrLen = msgLen + 3; // arrlen needs to stay for when Serial is NOT available
+  static byte packet[MAXLEN]; // if not declared static, the function return does not work. 
+  
+  for (int i = 0; i < arrLen; i++) packet[i] = 0; // erase all contects of packet
 
-  if (cereal.available() >= msgLen) 
+  if (cereal.available() >= arrLen) 
     { 
-      //for (int i = 0; i < msgLen; i++) packet[i] = 0; // erase all contects of packet
+      //for (int i = 0; i < arrLen; i++) packet[i] = 0; // erase all contects of packet
       // rcv message   
-      for (int i = 0; i < msgLen; i++)
+      for (int i = 0; i < arrLen; i++)
         {
           packet[i] = cereal.read();
           //Serial.print(packet[i]);
@@ -31,7 +34,7 @@ byte* jbus::poll(int msgLen)
 
       // calculate checksum
       checksum = 0; // reset before each calc
-      for (int i = 0; i < msgLen - 2; i++)
+      for (int i = 0; i < arrLen - 2; i++)
         {
           checksum ^= packet[i];
         }
@@ -39,10 +42,10 @@ byte* jbus::poll(int msgLen)
       //Serial.println(); 
 
       // if checksum good
-      if (checksum == packet[msgLen - 2])
+      if (checksum == packet[arrLen - 2])
         {
           // Serial.print("MSG GOOD! ");
-          // for (int i = 0; i < msgLen; i++)
+          // for (int i = 0; i < arrLen; i++)
           //   {
           //     Serial.print(packet[i]);
           //     Serial.print(" ");
@@ -56,7 +59,7 @@ byte* jbus::poll(int msgLen)
       else 
         {
           Serial.println("CHECKSUM IS BAD");
-          for (int i = 0; i < msgLen; i++) packet[i] = 0; // erase all contects of packet
+          for (int i = 0; i < arrLen; i++) packet[i] = 0; // erase all contects of packet
           
           return 0; // FAILED
         }
@@ -66,18 +69,18 @@ byte* jbus::poll(int msgLen)
 
 }
 
-bool jbus::send(byte arr[], int arrLen)
+bool jbus::send(byte arr[], int msgSize)
 {
   // arr is the message we want to send. We create an array that is +3 bigger for 
   // MSGstart, checksum, and MSGend
-  int finalPacketLen = arrLen + 3;
+  int finalPacketLen = msgSize + 3;
   byte packetToSend[finalPacketLen];
 
   for (int i = 0; i < finalPacketLen; i++)
     packetToSend[i] = 0; // initialize all values to 0
 
   packetToSend[0] = MSGSTART;
-  for (int i = 1; i < arrLen + 1; i++ ) 
+  for (int i = 1; i < msgSize + 1; i++ ) 
     packetToSend[i] = arr[i - 1]; // copies arr into outgoing packet
   for (int i = 0; i < finalPacketLen - 2; i++) 
     packetToSend[finalPacketLen - 2] ^= packetToSend[i]; // simple XOR checksum  
@@ -94,16 +97,16 @@ bool jbus::send(byte arr[], int arrLen)
 
 /* void jbus::testWrite()
 {
-  for (int i = 0; i < msgLen; i++) packet[i] = 0; // clear out packet
+  for (int i = 0; i < arrLen; i++) packet[i] = 0; // clear out packet
 
   packet[0] = MSGSTART;
   packet[1] = 1;
   packet[2] = 2;
   packet[3] = 3;
   packet[4] = 4; 
-  for (int i = 0; i < msgLen - 2; i++) packet[msgLen - 2] ^= packet[i]; // simple XOR checksum
+  for (int i = 0; i < arrLen - 2; i++) packet[arrLen - 2] ^= packet[i]; // simple XOR checksum
   packet[6] = MSGEND;
-  cereal.write(packet, msgLen);
+  cereal.write(packet, arrLen);
 }
 
 void jbus::testRead()
@@ -131,7 +134,7 @@ byte* jbus::pollCont()
       int pos = 0;
       for ( ; buffer[pos] != MSGSTART; pos++) // increment through buffer until we've found MSGSTART
         ;
-      for (int i = pos; i < (pos + msgLen); i++)
+      for (int i = pos; i < (pos + arrLen); i++)
         {
           packet[i - pos] = buffer[i]; // copy buffer into packet, zero indexed
           // Serial.print(packet[i - pos]);
@@ -141,7 +144,7 @@ byte* jbus::pollCont()
 
       // calculate checksum
       checksum = 0; // reset before each calc
-      for (int i = 0; i < msgLen - 2; i++)
+      for (int i = 0; i < arrLen - 2; i++)
         {
           checksum ^= packet[i];
         }
@@ -149,10 +152,10 @@ byte* jbus::pollCont()
       //Serial.println(); 
 
       // if checksum good
-      if (checksum == packet[msgLen - 2])
+      if (checksum == packet[arrLen - 2])
         {
           // Serial.print("MSG GOOD! ");
-          // for (int i = 0; i < msgLen; i++)
+          // for (int i = 0; i < arrLen; i++)
           //   {
           //     Serial.print(packet[i]);
           //     Serial.print(" ");

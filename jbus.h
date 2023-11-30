@@ -18,12 +18,9 @@ class jbus
     jbus(); 
     void init(unsigned long buad);
     byte* poll(int msgLen);  // looking for a single msg
-    bool send(byte arr[], int arrLen);
-    byte* transceive(byte packetToSend[], int packetLen);
-    
-
-
-    #define JBUS_PACK_LEN   7
+    bool send(byte arr[], int msgSize); // send packet
+    byte* transceive(byte arr[], int arrLen); // sends msgs, returns response
+  
 
 /*
   Packet to ASA
@@ -42,6 +39,5 @@ class jbus
     #define MSGEND        0xFE
     #define MAXLEN        20
     int checksum = 0;
-    //byte packet[JBUS_PACK_LEN];
 
 };

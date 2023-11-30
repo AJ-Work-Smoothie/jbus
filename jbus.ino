@@ -4,7 +4,7 @@ jbus asa;
 
 byte *tableCommand;
 
-byte arr[] = { 1, 2, 3, 4};
+byte arr[] = { 1, 2, 3 };
 
 void setup()
 {
