@@ -2,14 +2,78 @@
 
 jbus::jbus()
 {
-  
-
+  badMsgPtr = &badMsg; // set badMsg to point to badmsg, a byte equaling 0;
+  signOnCMDlen = sizeof(signOnCMD);
 }
 
 void jbus::init(unsigned long buad)
 {
   cereal.begin(buad);
   samd21Port1Begin(buad);
+}
+
+bool jbus::signOnASA()
+{
+  if (flag)
+    {
+      Serial.println("Attempting to connect to ASA V2");
+      send(signOnCMD, signOnCMDlen, true);
+      pMillis = millis();
+      flag = false;
+    }
+  if (millis() - pMillis > pollTime)
+    {
+      flag = true;
+    }
+
+  static byte *p;   // needs to be static for the return
+  p = poll(signOnCMDlen);
+  // the if the checksum didn't add up, then the sign on msg wasn't sent or it was erroneous. 
+  // if *p == our beginning of mesasage, then the msg was processed and the checksum passesd,
+  // therfore we got a good response back. No need to check the message byte by byte.
+  if (*p == REQUEST) 
+    {
+      Serial.println("Connection to ASA V2 Established");
+      for (int i = 0; i < 4; i++)
+        {
+          send(signOnCMD, signOnCMDlen, false); // send random 4 times
+        }
+      asa_connected = true;
+      return true; // we have a sign on!
+    }
+
+  else 
+    {
+      asa_connected = false;
+      return false;
+    }
+}
+
+bool jbus::signOnToTable()
+{
+  Serial.println("Trying to sign on, waiting for response");
+  send(signOnCMD, sizeof(signOnCMD), true);
+
+  byte *p;
+  p = poll(signOnCMDlen);
+  
+  if (*p == 0xFF) // wait for any message other than sign on
+    {
+      Serial.println("HOLY SHIT, this ACTUALLY WORKED! ");
+      return true;
+    }
+  else return false;
+  delay(100);
+}
+
+void jbus::runASAV2()
+{
+  byte *p;
+  p = poll(STANDARD_MSG_SIZE);
+
+  
+
+
 }
 
 byte* jbus::poll(int msgLen)
@@ -61,37 +125,15 @@ byte* jbus::poll(int msgLen)
           Serial.println("CHECKSUM IS BAD");
           for (int i = 0; i < arrLen; i++) packet[i] = 0; // erase all contects of packet
           
-          return 0; // FAILED
+          return badMsgPtr; // FAILED
         }
     } // if cereal.avilable
 
-  else return 0; 
+  else return badMsgPtr; 
 
 }
 
-/* byte* jbus::transceive(byte arr[], int arrLen, int pollTime)
-{
-  if (flag)
-    {
-      Serial.println("SENT");
-      send(arr, arrLen);
-      pMillis = millis();
-      flag = false;
-    }
-  if (millis() - pMillis > pollTime)
-    {
-      flag = true;
-    }
-  byte *p;
-  p = poll(arrLen - 3); // poll require msgLen
-  
-  if (*p == 0xFF)
-    {
-      Serial.print("WE GOT SOME BEANS!!!!!!!");
-    }
-} */
-
-bool jbus::send(byte arr[], int msgLen)
+bool jbus::send(byte msgArr[], int msgLen, bool requestData)
 {
   // arr is the message we want to send. We create an array that is +3 bigger for 
   // MSGstart, checksum, and MSGend
@@ -101,9 +143,11 @@ bool jbus::send(byte arr[], int msgLen)
   for (int i = 0; i < packetLen; i++)
     packet[i] = 0; // initialize all values to 0
 
-  packet[0] = MSGSTART;
+  if (requestData) packet[0] = REQUEST;
+  else packet[0] = MSGSTART;
+
   for (int i = 1; i < msgLen + 1; i++ ) 
-    packet[i] = arr[i - 1]; // copies arr into outgoing packet
+    packet[i] = msgArr[i - 1]; // copies arr into outgoing packet
   for (int i = 0; i < packetLen - 2; i++) 
     packet[packetLen - 2] ^= packet[i]; // simple XOR checksum  
   packet[packetLen - 1] = MSGEND; // remember, zero indexed
