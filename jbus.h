@@ -20,7 +20,10 @@ class jbus
     // Polls for a message of a specific length. Pass in the length of the message
     byte* poll(int msgLen);  
     bool send(byte arr[], int msgLen); // send packet
-    byte* transceive(byte arr[], int arrLen); // sends msgs, returns response
+    // Sends a message and waits for a response.
+    // byte* transceive(byte arr[], int arrLen, int pollTime); 
+    //   bool flag = true;
+    //   unsigned long pMillis = 0;
   
 
 /*

@@ -4,7 +4,7 @@ jbus asa;
 
 byte *tableCommand;
 
-byte arr[] = { 1, 2, 3, 4};
+byte arr[] = { 1, 2, 3, 4, 5};
 
 void setup()
 {
@@ -17,8 +17,9 @@ void loop()
   //asa.testWrite();
   //delay(10);
 
-  asa.send(arr, sizeof(arr));
-  delay(20);
+  //asa.send(arr, sizeof(arr));
+  //asa.transceive(arr, sizeof(arr), 500);
+  //delay(20);
 
   // tableCommand = asa.poll();
   // if (*tableCommand == 0xFF) // if buffer[i] = 0xFF, we must have gotten a new msg!

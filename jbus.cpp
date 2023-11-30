@@ -69,6 +69,28 @@ byte* jbus::poll(int msgLen)
 
 }
 
+/* byte* jbus::transceive(byte arr[], int arrLen, int pollTime)
+{
+  if (flag)
+    {
+      Serial.println("SENT");
+      send(arr, arrLen);
+      pMillis = millis();
+      flag = false;
+    }
+  if (millis() - pMillis > pollTime)
+    {
+      flag = true;
+    }
+  byte *p;
+  p = poll(arrLen - 3); // poll require msgLen
+  
+  if (*p == 0xFF)
+    {
+      Serial.print("WE GOT SOME BEANS!!!!!!!");
+    }
+} */
+
 bool jbus::send(byte arr[], int msgLen)
 {
   // arr is the message we want to send. We create an array that is +3 bigger for 
@@ -87,12 +109,12 @@ bool jbus::send(byte arr[], int msgLen)
   packet[packetLen - 1] = MSGEND; // remember, zero indexed
   cereal.write(packet, packetLen);
 
-  for (int i = 0; i < packetLen; i++)
-    {
-      Serial.print(packet[i]);
-      Serial.print(" ");
-    }
-  Serial.println();
+  // for (int i = 0; i < packetLen; i++)
+  //   {
+  //     Serial.print(packet[i]);
+  //     Serial.print(" ");
+  //   }
+  // Serial.println();
 }
 
 /* void jbus::testWrite()
