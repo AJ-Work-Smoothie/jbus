@@ -26,7 +26,7 @@ bool jbus::signOnASA()
       flag = true;
     }
 
-  static byte *p;   // needs to be static for the return
+  byte *p;   // needs to be static for the return
   p = poll(signOnCMDlen);
   // the if the checksum didn't add up, then the sign on msg wasn't sent or it was erroneous. 
   // if *p == our beginning of mesasage, then the msg was processed and the checksum passesd,
@@ -34,14 +34,9 @@ bool jbus::signOnASA()
   if (*p == REQUEST) 
     {
       Serial.println("Connection to ASA V2 Established");
-      for (int i = 0; i < 4; i++)
-        {
-          send(signOnCMD, signOnCMDlen, false); // send random 4 times
-        }
-      asa_connected = true;
+      asa_connected = true; // save state to variable for updating the HMI
       return true; // we have a sign on!
     }
-
   else 
     {
       asa_connected = false;
@@ -49,30 +44,23 @@ bool jbus::signOnASA()
     }
 }
 
-bool jbus::signOnToTable()
-{
-  Serial.println("Trying to sign on, waiting for response");
-  send(signOnCMD, sizeof(signOnCMD), true);
-
-  byte *p;
-  p = poll(signOnCMDlen);
-  
-  if (*p == 0xFF) // wait for any message other than sign on
-    {
-      Serial.println("HOLY SHIT, this ACTUALLY WORKED! ");
-      return true;
-    }
-  else return false;
-  delay(100);
-}
-
-void jbus::runASAV2()
+void jbus::respondToTable()
 {
   byte *p;
   p = poll(STANDARD_MSG_SIZE);
 
-  
+  // if our messages begins with request, check the checksum byte. If the checksum
+  // byte = 0xFD, then that means we send a sign-on message. 
+  if (*p == REQUEST)
+    {
+      
+      if (p[STANDARD_MSG_SIZE + 1] == 0xFD)
+        {
+          //Serial.println("Sending Back Handshake");
+          send(signOnCMD, signOnCMDlen, true);
+        }
 
+    }
 
 }
 

@@ -24,15 +24,13 @@ class jbus
     // Sends a message and waits for a response.
     //byte* transceive(byte msgArr[], int msgLen, int pollTime); 
 
-    byte signOnCMD[4] = {0xFC, 0xFC, 0xFB, 0xFB};
+    byte signOnCMD[4] = {0xFC, 0xFC, 0xFC, 0xFC};
     // ROTARY TABLE TO ASA
     bool signOnASA();
     bool asa_connected = false;
-    void runASAV2();
     
-
-    // ASA TO ROTARY TABLE
-    bool signOnToTable();
+    void respondToTable();
+    
     
 
 /*
@@ -53,6 +51,7 @@ class jbus
     #define MSGSTART      0xFF
     #define MSGEND        0xFE
     #define REQUEST       0xFD
+    #define SIGNONRFQ     0xFC
     #define MAXLEN        20
     int checksum = 0;
     byte badMsg = 0;
