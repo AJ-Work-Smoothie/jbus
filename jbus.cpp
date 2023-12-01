@@ -54,7 +54,7 @@ void jbus::respondToTable()
   if (*p == REQUEST)
     {
       
-      if (p[STANDARD_MSG_SIZE + 1] == 0xFD)
+      if (p[STANDARD_MSG_SIZE + 1] == SIGNONRFQCHECKSUM)
         {
           //Serial.println("Sending Back Handshake");
           send(signOnCMD, signOnCMDlen, true);
@@ -121,7 +121,7 @@ byte* jbus::poll(int msgLen)
 
 }
 
-bool jbus::send(byte msgArr[], int msgLen, bool requestData)
+void jbus::send(byte msgArr[], int msgLen, bool requestData)
 {
   // arr is the message we want to send. We create an array that is +3 bigger for 
   // MSGstart, checksum, and MSGend
