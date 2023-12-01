@@ -59,12 +59,9 @@ class jbus
     byte* poll(int msgLen); 
     // sends packet. If request is true, it will prefix the message with 0xFD
     void send(byte msgArr[], int msgLen, bool requestData); // send packet
-    
 
-    byte signOnCMD[4] = {0xFC, 0xFC, 0xFC, 0xFC};
-    // ROTARY TABLE TO ASA
     bool signOnASA();
-    bool asa_connected = false;
+      bool asa_connected = false;
     
     void respondToTable();
     
@@ -94,7 +91,8 @@ class jbus
     int checksum = 0;
     byte badMsg = 0;
     byte *badMsgPtr;
-    byte signOnCMDlen;    //defined in default constructor  
+    byte signOnCMDlen;    //defined in default constructor
+    byte signOnCMD[4] = {0xFC, 0xFC, 0xFC, 0xFC};  
 
     // for ASA sign on
     bool flag = true;
