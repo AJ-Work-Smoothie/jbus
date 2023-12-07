@@ -3,75 +3,12 @@
 jbus::jbus()
 {
   badMsgBytePtr = &badMsgByte; // set badMsg to point to badmsg, a byte equaling 0;
-  badMsgFloatPtr = &badMsgFloat;
-  signOnCMDlen = sizeof(signOnCMD);
 }
 
 void jbus::init(unsigned long buad)
 {
   cereal.begin(buad);
   samd21Port1Begin(buad);
-}
-
-bool jbus::signOnASA()
-{
-  if (flag)
-    {
-      Serial.println("Attempting to connect to ASA V2");
-      send(signOnCMD, signOnCMDlen, true);
-      pMillis = millis();
-      flag = false;
-    }
-  if (millis() - pMillis > msgSendInterval)
-    {
-      flag = true;
-    }
-
-  byte *p;   // if returning, needs to be static
-  p = poll(signOnCMDlen);
-  // the if the checksum didn't add up, then the sign on msg wasn't sent or it was erroneous. 
-  // if *p == our beginning of mesasage, then the msg was processed and the checksum passesd,
-  // therfore we got a good response back. No need to check the message byte by byte.
-  if (*p == REQUEST) 
-    {
-      Serial.println("Connection to ASA V2 Established");
-      asa_connected = true; // save state to variable for updating the HMI
-      return true; // we have a sign on!
-    }
-  else 
-    {
-      asa_connected = false;
-      return false;
-    }
-}
-
-void jbus::setVoltage(float va, float vb, float vc, float vd)
-{
-  byte daca = (va * 10);
-  byte dacb = (vb * 10);
-  byte dacc = (vc * 10);
-  byte dacd = (vd * 10);
-
-  byte arr[] = { daca, dacb, dacc, dacd };
-  send(arr, sizeof(arr), false);
-}
-
-
-byte* jbus::getDutStatus()
-{
-  byte *p = poll(STANDARD_MSG_SIZE);  
-  if (*p == PACKETSTART)
-    {
-      newResponse = true;
-      for (int i = 0; i < STANDARD_MSG_SIZE; i++)
-        dutStatus[i] = (p[MSGSTART + i] - 250); // converting from our PASS/FAIL message to boolean logic
-
-      return dutStatus;
-
-    }    
-  newResponse = false;
-  return badMsgBytePtr;
-
 }
 
 byte* jbus::poll(int msgLen)
@@ -122,7 +59,7 @@ byte* jbus::poll(int msgLen)
         {
           Serial.println("CHECKSUM IS BAD");
           for (int i = 0; i < arrLen; i++) packet[i] = 0; // erase all contects of packet
-          
+          reset(); // NOT BEEN TESTED!!!!!
           return badMsgBytePtr; // FAILED
         }
     } // if cereal.avilable
@@ -167,6 +104,7 @@ void jbus::reset()
       cereal.read();
     }
 }
+
 /* This code is perfect! Just didn't need it
 byte* jbus::pollCont()
 {

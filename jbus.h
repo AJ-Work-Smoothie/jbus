@@ -61,37 +61,7 @@ class jbus
     byte* poll(int msgLen); 
     // sends packet. If request is true, it will prefix the message with msgRFQ instead of standard msg
     void send(byte msgArr[], int msgLen, bool requestData); // send packet
-    void reset();
-
-    // rotary table functions
-    bool signOnASA();
-      bool asa_connected = false;
-    void setVoltage(float va, float vb, float vc, float vd);
-      float voltageLevels[STANDARD_MSG_SIZE] = { 0.0, 0.0, 0.0, 0.0 };
-    byte* getDutStatus();
-      bool newResponse = false;
-      byte dutStatus[STANDARD_MSG_SIZE] = { 0, 0, 0, 0 };
-    
-    // asa functions
-    float* respondToTable(); // returns an array
-      bool newCommand = false;
-    // enter true or false, the function will convert from boolean for you. Yeah, I done did that.
-    void sendDutStatus(byte tripStatusA, byte tripStatusB, byte tripStatusC, byte tripStatusD);
-    
-    
-
-/*
-  Packet to ASA
-  | MSG START | VoltA | VoltB | VoltC |  VoltD |  Checksum  | MSG END | 
-  |   0xFF    | 0-22  | 0-22  | 0-22  |  0-22  |    0xXX    |   0xFE  |
-
-
-
-  Packet to Table
-  | MSG START | TripA | TripB | TripC |  TripD |  Checksum  | MSG END | 
-  |   0xFF    |  Y/N  |  Y/N  |  Y/N  |   Y/N  |    0xXX    |   0xFE  |
-
-*/    
+    void reset(); 
 
   private:
     
@@ -99,24 +69,11 @@ class jbus
     #define PACKETEND     0xFE
     #define MSGSTART      1       // index of the packet array where the useful message starts
     #define REQUEST       0xFD
-    #define SIGNONRFQ     0xFC
-    #define SIGNONRFQCHECKSUM 0xFD
-    #define DUTPASS       0xFB
-    #define DUTFAIL       0xFA
     #define MAXLEN        20
 
     int checksum = 0;
     byte badMsgByte = 0;
     byte *badMsgBytePtr;
-    float badMsgFloat = 0.0;
-    float *badMsgFloatPtr;
-    byte signOnCMDlen;    //defined in default constructor
-    byte signOnCMD[STANDARD_MSG_SIZE] = {0xFC, 0xFC, 0xFC, 0xFC};
-
-
-    // for ASA sign on
-    bool flag = true;
-    unsigned long pMillis = 0;
-    int msgSendInterval = 500;
+    
 
 };
