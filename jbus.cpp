@@ -2,7 +2,8 @@
 
 jbus::jbus()
 {
-  badMsgPtr = &badMsg; // set badMsg to point to badmsg, a byte equaling 0;
+  badMsgBytePtr = &badMsgByte; // set badMsg to point to badmsg, a byte equaling 0;
+  badMsgFloatPtr = &badMsgFloat;
   signOnCMDlen = sizeof(signOnCMD);
 }
 
@@ -21,12 +22,12 @@ bool jbus::signOnASA()
       pMillis = millis();
       flag = false;
     }
-  if (millis() - pMillis > pollTime)
+  if (millis() - pMillis > msgSendInterval)
     {
       flag = true;
     }
 
-  byte *p;   // needs to be static for the return
+  byte *p;   // if returning, needs to be static
   p = poll(signOnCMDlen);
   // the if the checksum didn't add up, then the sign on msg wasn't sent or it was erroneous. 
   // if *p == our beginning of mesasage, then the msg was processed and the checksum passesd,
@@ -44,29 +45,38 @@ bool jbus::signOnASA()
     }
 }
 
-void jbus::respondToTable()
+void jbus::setVoltage(float va, float vb, float vc, float vd)
 {
-  byte *p;
-  p = poll(STANDARD_MSG_SIZE);
+  byte daca = (va * 10);
+  byte dacb = (vb * 10);
+  byte dacc = (vc * 10);
+  byte dacd = (vd * 10);
 
-  // if our messages begins with request, check the checksum byte. If the checksum
-  // byte = 0xFD, then that means we send a sign-on message. 
-  if (*p == REQUEST)
+  byte arr[] = { daca, dacb, dacc, dacd };
+  send(arr, sizeof(arr), false);
+}
+
+
+byte* jbus::getDutStatus()
+{
+  byte *p = poll(STANDARD_MSG_SIZE);  
+  if (*p == PACKETSTART)
     {
-      
-      if (p[STANDARD_MSG_SIZE + 1] == SIGNONRFQCHECKSUM)
-        {
-          //Serial.println("Sending Back Handshake");
-          send(signOnCMD, signOnCMDlen, true);
-        }
+      newResponse = true;
+      for (int i = 0; i < STANDARD_MSG_SIZE; i++)
+        dutStatus[i] = (p[MSGSTART + i] - 250); // converting from our PASS/FAIL message to boolean logic
 
-    }
+      return dutStatus;
+
+    }    
+  newResponse = false;
+  return badMsgBytePtr;
 
 }
 
 byte* jbus::poll(int msgLen)
 {
-  // we pass in the msgLen, so the array len is msgLen+3 (MSGstart, checksum, MSGend)
+  // we pass in the msgLen, so the array len is msgLen+3 (PACKETSTART, checksum, PACKETEND)
   static int arrLen = msgLen + 3; // arrlen needs to stay for when Serial is NOT available
   static byte packet[MAXLEN]; // if not declared static, the function return does not work. 
   
@@ -113,18 +123,18 @@ byte* jbus::poll(int msgLen)
           Serial.println("CHECKSUM IS BAD");
           for (int i = 0; i < arrLen; i++) packet[i] = 0; // erase all contects of packet
           
-          return badMsgPtr; // FAILED
+          return badMsgBytePtr; // FAILED
         }
     } // if cereal.avilable
 
-  else return badMsgPtr; 
+  else return badMsgBytePtr; 
 
 }
 
 void jbus::send(byte msgArr[], int msgLen, bool requestData)
 {
   // arr is the message we want to send. We create an array that is +3 bigger for 
-  // MSGstart, checksum, and MSGend
+  // PACKETSTART, checksum, and PACKETEND
   int packetLen = msgLen + 3;
   byte packet[packetLen];
 
@@ -132,13 +142,13 @@ void jbus::send(byte msgArr[], int msgLen, bool requestData)
     packet[i] = 0; // initialize all values to 0
 
   if (requestData) packet[0] = REQUEST;
-  else packet[0] = MSGSTART;
+  else packet[0] = PACKETSTART;
 
   for (int i = 1; i < msgLen + 1; i++ ) 
     packet[i] = msgArr[i - 1]; // copies arr into outgoing packet
   for (int i = 0; i < packetLen - 2; i++) 
     packet[packetLen - 2] ^= packet[i]; // simple XOR checksum  
-  packet[packetLen - 1] = MSGEND; // remember, zero indexed
+  packet[packetLen - 1] = PACKETEND; // remember, zero indexed
   cereal.write(packet, packetLen);
 
   // for (int i = 0; i < packetLen; i++)
@@ -149,30 +159,14 @@ void jbus::send(byte msgArr[], int msgLen, bool requestData)
   // Serial.println();
 }
 
-/* void jbus::testWrite()
+void jbus::reset()
 {
-  for (int i = 0; i < arrLen; i++) packet[i] = 0; // clear out packet
-
-  packet[0] = MSGSTART;
-  packet[1] = 1;
-  packet[2] = 2;
-  packet[3] = 3;
-  packet[4] = 4; 
-  for (int i = 0; i < arrLen - 2; i++) packet[arrLen - 2] ^= packet[i]; // simple XOR checksum
-  packet[6] = MSGEND;
-  cereal.write(packet, arrLen);
-}
-
-void jbus::testRead()
-{
-  if (cereal.available())
+  for(int i = 0; i < 128; i++)
     {
-      byte b = cereal.read();
-      Serial.print(b);
-      if (b == 0xFE)  Serial.println();
+      // clear out serial buffer
+      cereal.read();
     }
-} */
-
+}
 /* This code is perfect! Just didn't need it
 byte* jbus::pollCont()
 {
@@ -186,7 +180,7 @@ byte* jbus::pollCont()
         }
       
       int pos = 0;
-      for ( ; buffer[pos] != MSGSTART; pos++) // increment through buffer until we've found MSGSTART
+      for ( ; buffer[pos] != PACKETSTART; pos++) // increment through buffer until we've found PACKETSTART
         ;
       for (int i = pos; i < (pos + arrLen); i++)
         {
