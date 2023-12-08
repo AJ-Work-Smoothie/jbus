@@ -57,7 +57,7 @@ class jbus
   public:
     jbus(); 
     void init(unsigned long buad);
-    // Polls for a message of a specific length. Pass in the length of the message
+    // Polls for a message of a specific length. Pass in the length of the message. Poll is NOT blocking
     byte* poll(int msgLen); 
     // sends packet. If request is true, it will prefix the message with msgRFQ instead of standard msg
     void send(byte msgArr[], int msgLen, bool requestData); // send packet
