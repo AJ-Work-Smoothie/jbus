@@ -13,6 +13,7 @@ void jbus::init(unsigned long buad)
 
 byte* jbus::poll(int msgLen)
 {
+  //while(Serial.available()) { ; } // wait for messages to arrive
   // we pass in the msgLen, so the array len is msgLen+3 (PACKETSTART, checksum, PACKETEND)
   static int arrLen = msgLen + 3; // arrlen needs to stay for when Serial is NOT available
   static byte packet[MAXLEN]; // if not declared static, the function return does not work. 
@@ -59,7 +60,7 @@ byte* jbus::poll(int msgLen)
         {
           Serial.println("CHECKSUM IS BAD");
           for (int i = 0; i < arrLen; i++) packet[i] = 0; // erase all contects of packet
-          reset(); // NOT BEEN TESTED!!!!!
+          reset(); // completely clears out the serial buffer
           return badMsgBytePtr; // FAILED
         }
     } // if cereal.avilable

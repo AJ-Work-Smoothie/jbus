@@ -12,7 +12,12 @@ void setup()
 void loop()
 {
 
-  //bus.poll();
+  bus.poll(4);
   //bus.send();
+
+  for(int i = 0; i < 1000; i++)
+    {
+      Serial.println(i);
+    }
 
 }

@@ -40,7 +40,7 @@
 */
 
 #ifdef ARDUINO_AVR_MEGA2560
-#define cereal (Serial1)
+#define cereal (Serial3)
 #define samd21Port1Begin(a)
 #endif
 
