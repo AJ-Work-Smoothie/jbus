@@ -61,7 +61,8 @@ class jbus
     byte* poll(int msgLen); 
     // sends packet. If request is true, it will prefix the message with msgRFQ instead of standard msg
     void send(byte msgArr[], int msgLen, bool requestData); // send packet
-    void reset(); 
+    void debugSet(bool mode);
+    void reset();   
 
   private:
     
@@ -74,6 +75,8 @@ class jbus
     int checksum = 0;
     byte badMsgByte = 0;
     byte *badMsgBytePtr;
+
+    bool debugMode = false;
     
 
 };

@@ -44,13 +44,16 @@ byte* jbus::poll(int msgLen)
       // if checksum good
       if (checksum == packet[arrLen - 2])
         {
-          // Serial.print("MSG GOOD! ");
-          // for (int i = 0; i < arrLen; i++)
-          //   {
-          //     Serial.print(packet[i]);
-          //     Serial.print(" ");
-          //   }
-          // Serial.println();
+          if (debugMode)
+           {
+              Serial.print("MSG GOOD! ");
+              for (int i = 0; i < arrLen; i++)
+                {
+                  Serial.print(packet[i]);
+                  Serial.print(" ");
+                }
+              Serial.println();
+           }
 
           return packet;
         }
@@ -67,6 +70,11 @@ byte* jbus::poll(int msgLen)
 
   else return badMsgBytePtr; 
 
+}
+
+void jbus::debugSet(bool mode)
+{
+  debugMode = mode;
 }
 
 void jbus::send(byte msgArr[], int msgLen, bool requestData)
@@ -89,12 +97,16 @@ void jbus::send(byte msgArr[], int msgLen, bool requestData)
   packet[packetLen - 1] = PACKETEND; // remember, zero indexed
   cereal.write(packet, packetLen);
 
-  // for (int i = 0; i < packetLen; i++)
-  //   {
-  //     Serial.print(packet[i]);
-  //     Serial.print(" ");
-  //   }
-  // Serial.println();
+  if (debugMode)
+    {
+      Serial.print("MSG SENT: ");
+      for (int i = 0; i < packetLen; i++)
+        {
+          Serial.print(packet[i]);
+          Serial.print(" ");
+        }
+      Serial.println();
+    }
 }
 
 void jbus::reset()
