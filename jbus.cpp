@@ -46,7 +46,7 @@ byte* jbus::poll(int msgLen)
         {
           if (debugMode)
            {
-              Serial.print("MSG GOOD! ");
+              Serial.print("MSG RECEIVED GOOD! ");
               for (int i = 0; i < arrLen; i++)
                 {
                   Serial.print(packet[i]);
