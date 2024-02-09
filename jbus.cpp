@@ -109,6 +109,37 @@ void jbus::send(byte msgArr[], int msgLen, bool requestData)
     }
 }
 
+void jbus::send(byte msgArr[], int msgLen, byte customStartByte)
+{
+  // arr is the message we want to send. We create an array that is +3 bigger for 
+  // PACKETSTART, checksum, and PACKETEND
+  int packetLen = msgLen + 3;
+  byte packet[packetLen];
+
+  for (int i = 0; i < packetLen; i++)
+    packet[i] = 0; // initialize all values to 0
+
+  packet[0] = customStartByte; // our custom start bite!!
+
+  for (int i = 1; i < msgLen + 1; i++ ) 
+    packet[i] = msgArr[i - 1]; // copies arr into outgoing packet
+  for (int i = 0; i < packetLen - 2; i++) 
+    packet[packetLen - 2] ^= packet[i]; // simple XOR checksum  
+  packet[packetLen - 1] = PACKETEND; // remember, zero indexed
+  cereal.write(packet, packetLen);
+
+  if (debugMode)
+    {
+      Serial.print("MSG SENT: ");
+      for (int i = 0; i < packetLen; i++)
+        {
+          Serial.print(packet[i]);
+          Serial.print(" ");
+        }
+      Serial.println();
+    }
+}
+
 void jbus::reset()
 {
   for(int i = 0; i < 128; i++)
