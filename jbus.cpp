@@ -5,6 +5,12 @@ jbus::jbus()
   badMsgBytePtr = &badMsgByte; // set badMsg to point to badmsg, a byte equaling 0;
 }
 
+jbus::jbus(byte serverAddress)
+{
+  badMsgBytePtr = &badMsgByte; // set badMsg to point to badmsg, a byte equaling 0;
+  _slaveAddress = serverAddress;
+}
+
 void jbus::init(unsigned long buad)
 {
   cereal.begin(buad);
@@ -13,88 +19,56 @@ void jbus::init(unsigned long buad)
 
 byte* jbus::poll(int msgLen)
 {
-  //while(Serial.available()) { ; } // wait for messages to arrive
-  // we pass in the msgLen, so the array len is msgLen+3 (PACKETSTART, checksum, PACKETEND)
-  static int arrLen = msgLen + 3; // arrlen needs to stay for when Serial is NOT available
-  static byte packet[MAXLEN]; // if not declared static, the function return does not work. 
+  static byte packet[MAXLEN]; // holds the entire raw packet
+  static int packetLen = msgLen + WRAPPER_COUNT; // arrlen needs to stay for when Serial is NOT available
   
-  for (int i = 0; i < arrLen; i++) packet[i] = 0; // erase all contects of packet
+  for (int i = 0; i < MAXLEN; i++) packet[i] = 0; // erase all contects of packet
 
-  if (cereal.available() >= arrLen) 
+  if (cereal.available() >= packetLen) 
     { 
-      //for (int i = 0; i < arrLen; i++) packet[i] = 0; // erase all contects of packet
-      // rcv message   
-      for (int i = 0; i < arrLen; i++)
-        {
-          packet[i] = cereal.read();
-          //Serial.print(packet[i]);
-          //Serial.print(" ");
+      for (int i = 0; i < packetLen; i++) 
+        { 
+          packet[i] = cereal.read(); // get packs from the serial port!
+          //Serial.print(packet[i], HEX); Serial.print(" ");
         }
       //Serial.println();
 
-      // calculate checksum
-      checksum = 0; // reset before each calc
-      for (int i = 0; i < arrLen - 2; i++)
-        {
-          checksum ^= packet[i];
+      if (verifyChecksum(packet, packetLen)) 
+        { 
+          static byte message[MAXLEN];
+          for (int i = 0; i < MAXLEN; i++) message[i] = 0; // erase the packet
+          // we are starting at + 1 because the first byte is the start byte. MSG len does not account for the address, so let's add that
+          for (int i = 1; i < 1 + (msgLen + 1); i++) { message[i - 1] = packet[i]; } // copy the message into the message array - wrappers (keeping address)
+          // If the message isn't for us, let's ignore it
+          if ((packet[1] & 0x7F) != _slaveAddress) return badMsgBytePtr; // if the address is not for us, return a bad message (0x00
+          return message;
         }
-      //Serial.print("   Checksum Calc: "); Serial.print(checksum);
-      //Serial.println(); 
-
-      // if checksum good
-      if (checksum == packet[arrLen - 2])
-        {
-          if (debugMode)
-           {
-              Serial.print("MSG RECEIVED GOOD! ");
-              for (int i = 0; i < arrLen; i++)
-                {
-                  Serial.print(packet[i]);
-                  Serial.print(" ");
-                }
-              Serial.println();
-           }
-
-          return packet;
-        }
-      
-  // if checksum is bad
       else 
         {
           Serial.println("CHECKSUM IS BAD");
-          for (int i = 0; i < arrLen; i++) packet[i] = 0; // erase all contects of packet
-          reset(); // completely clears out the serial buffer
-          return badMsgBytePtr; // FAILED
+          for (int i = 0; i < MAXLEN; i++) packet[i] = 0; // erase all contects of packet
+          while (cereal.read() != ENDBYTE) { ; } // clear out serial buffer until we find an end byte, so the next one we read is the start byte
+          return badMsgBytePtr;
         }
     } // if cereal.avilable
 
   else return badMsgBytePtr; 
-
 }
 
-void jbus::debugSet(bool mode)
+void jbus::send(byte address, bool requestData, byte msgArr[], int msgLen)
 {
-  debugMode = mode;
-}
-
-void jbus::send(byte msgArr[], int msgLen, bool requestData)
-{
-  // arr is the message we want to send. We create an array that is +3 bigger for 
-  // PACKETSTART, checksum, and PACKETEND
-  int packetLen = msgLen + 3;
+  // arr is the message we want to send. We create an array that is +4 bigger for our WRAPPER_COUNT
+  int packetLen = msgLen + WRAPPER_COUNT;
   byte packet[packetLen];
+  for (int i = 0; i < packetLen; i++) packet[i] = 0; // initialize all values to 0
 
-  for (int i = 0; i < packetLen; i++)
-    packet[i] = 0; // initialize all values to 0
-
-  if (requestData) packet[0] = REQUEST;
-  else packet[0] = PACKETSTART;
-
-  for (int i = 1; i < msgLen + 1; i++ ) 
-    packet[i] = msgArr[i - 1]; // copies arr into outgoing packet
-  for (int i = 0; i < packetLen - 2; i++) 
-    packet[packetLen - 2] ^= packet[i]; // simple XOR checksum  
-  packet[packetLen - 1] = PACKETEND; // remember, zero indexed
+  packet[0] = STARTBYTE; // start byte
+  if (requestData) { packet[1] = (address |= 1<<7); } // if we are requesting data, set the MSB to 1,
+  else { packet[1] = (address = address &= ~(1<<7)); } // if we are sending data, set the MSB to 0
+  for (int i = 2; i < msgLen + 2; i++ ) 
+    packet[i] = msgArr[i - 2]; // copies arr into outgoing packet
+  packet[packetLen - 2] = calcChecksum(packet, packetLen);
+  packet[packetLen - 1] = ENDBYTE; // remember, zero indexed
   cereal.write(packet, packetLen);
 
   if (debugMode)
@@ -102,13 +76,13 @@ void jbus::send(byte msgArr[], int msgLen, bool requestData)
       Serial.print("MSG SENT: ");
       for (int i = 0; i < packetLen; i++)
         {
-          Serial.print(packet[i]);
+          Serial.print(packet[i], HEX);
           Serial.print(" ");
         }
       Serial.println();
     }
 }
-
+/*
 void jbus::send(byte msgArr[], int msgLen, byte customStartByte)
 {
   // arr is the message we want to send. We create an array that is +3 bigger for 
@@ -139,73 +113,29 @@ void jbus::send(byte msgArr[], int msgLen, byte customStartByte)
       Serial.println();
     }
 }
+*/
+bool jbus::verifyChecksum(byte *arrPtr, int arrLen)
+{
+  byte checksum = 0;
+  // this gets everything from the beginning of the array up to the checksum - 1
+  for (int i = 0; i < arrLen - 2; i++) { checksum ^= arrPtr[i]; }
+  checksum = checksum - 2; // this prevents it from ever being FF or FE
+  //Serial.print("   Checksum Calc: "); Serial.print(checksum); Serial.println();
+  if (checksum == arrPtr[arrLen - 2]) { return true; }
+  return false;
+}
+
+byte jbus::calcChecksum(byte *arrPtr, int arrLen)
+{
+  byte checksum = 0;
+  // this gets everything from the beginning of the array up to the checksum - 1
+  for (int i = 0; i < arrLen - 2; i++) { checksum ^= arrPtr[i]; }
+  checksum = checksum - 2; // this prevents it from ever being FF or FE
+  //Serial.print("   Checksum Calc: "); Serial.print(checksum); Serial.println();
+  return checksum;
+}
 
 void jbus::reset()
 {
-  for(int i = 0; i < 128; i++)
-    {
-      // clear out serial buffer
-      cereal.read();
-    }
+  for (int i = 0; i < 64; i++) { cereal.read(); } // clear out serial buffer
 }
-
-/* This code is perfect! Just didn't need it
-byte* jbus::pollCont()
-{
-  if (cereal.available() >= BUFFLEN) 
-    { 
-      clearPacket(); // erase all contects of packet
-      // rcv message   
-      for (int i = 0; i < BUFFLEN; i++)
-        {
-          buffer[i] = cereal.read();
-        }
-      
-      int pos = 0;
-      for ( ; buffer[pos] != PACKETSTART; pos++) // increment through buffer until we've found PACKETSTART
-        ;
-      for (int i = pos; i < (pos + arrLen); i++)
-        {
-          packet[i - pos] = buffer[i]; // copy buffer into packet, zero indexed
-          // Serial.print(packet[i - pos]);
-          // Serial.print(" ");
-        }
-      // Serial.println();
-
-      // calculate checksum
-      checksum = 0; // reset before each calc
-      for (int i = 0; i < arrLen - 2; i++)
-        {
-          checksum ^= packet[i];
-        }
-      //Serial.print("   Checksum Calc: "); Serial.print(checksum);
-      //Serial.println(); 
-
-      // if checksum good
-      if (checksum == packet[arrLen - 2])
-        {
-          // Serial.print("MSG GOOD! ");
-          // for (int i = 0; i < arrLen; i++)
-          //   {
-          //     Serial.print(packet[i]);
-          //     Serial.print(" ");
-          //   }
-          // Serial.println();
-
-          clearBuffer();
-          return packet;
-        }
-      
-  // if checksum is bad
-      else 
-        {
-          Serial.println("CHECKSUM IS BAD");
-          clearBuffer();
-          
-          return 0; // FAILED
-        }
-    } // if cereal.avilable
-
-  else return 0; 
-
-} */
