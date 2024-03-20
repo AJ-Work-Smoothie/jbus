@@ -2,7 +2,7 @@
 #include <Arduino.h>
 
 /*
- * VERSION: ART_SW_1.5
+ * VERSION: ART_SW_2.0
  * DATE: 2021-09-30
  * This is the last stable version before making major changes.
  * JBUS needs a major update, and the the master byte array needs to be swapped for a struct. 
