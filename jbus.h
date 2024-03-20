@@ -2,8 +2,6 @@
 #include <Arduino.h>
 
 /*
-
-/*
  * VERSION: ART_SW_1.5
  * DATE: 2021-09-30
  * This is the last stable version before making major changes.
