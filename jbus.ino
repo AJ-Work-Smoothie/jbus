@@ -1,8 +1,8 @@
 #include "jbus.h"
 
-#define SERVER_ADDY 10
+#define SLAVE_ADDY 10
 
-jbus bus(SERVER_ADDY);
+jbus bus(SLAVE_ADDY);
 byte *p;
 
 // bool newData = false;
@@ -17,17 +17,17 @@ void setup()
   Serial.begin(115200);
   bus.init(9600);
 
-  bus.debugMode = true;
+  bus.debugMode = false;
 }
 
 
 void loop()
 {
-  byte *p = bus.poll(2);
-  // this only grabs the lower 7 bits of the address
-  if (*p != 0x00)
+  byte *p = bus.poll();
+
+  if ((*p & 0x7F) == SLAVE_ADDY)
     {
-      if ((*p >> 7) == 1) Serial.println("Required to respond!");
+      if ((*p >> 7) == 1) Serial.print("Required to respond!\t");
         
       while (*p != 0x00)
         {
@@ -37,4 +37,5 @@ void loop()
         }
       Serial.println();
     }
+
 }
