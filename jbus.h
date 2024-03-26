@@ -20,7 +20,7 @@
   Poll returns with a pointer to the received messsage. *p is the address. We can check that address with 
   the following: if ((*p & 0x7F) == slave_address) 
   
-  Next we can check to see if we need to resond: if ((*p >> 7) == 1) Serial.println("Required to respond!");
+  Next we can check to see if we need to resond: if (*p >> 7) Serial.println("Required to respond!");
   Aternatively, we could OR the address with 0x80 to see if we are required to respond like so: if (*p == (slave_address | 0x80))
 
   * send() simply requires an address, respond or not command, and a null terminated array to send. You must null terminate the array
@@ -52,8 +52,6 @@
 #define samd21Port1Begin(a)  (PORT1_RS232_BEGIN(a))
 #endif
 
-#define STANDARD_MSG_SIZE 4
-
 class jbus
 {
   public:
@@ -79,6 +77,15 @@ class jbus
      * @param msgArr The message to send must be null terminated
     */
     void send(byte address, bool requestData, byte msgArr[]);
+    /**
+     * @brief This function sends a message to the bus. If requestData is true, the slave is required to respond. 
+     * If you need to send a 0 in the data, use the function and pass in the length of the message. Previous version
+     * uses the 0 to determine the length of the message, so if you need to send 0, use this function.
+     * @param address The address of the slave
+     * @param requestData If true, the slave is required to respond
+     * @param msgArr The message to send must be null terminated
+    */
+   void send(byte address, bool requestData, byte msgArr[], int arrLen);
     
 
   private:
@@ -94,5 +101,4 @@ class jbus
     byte _slaveAddress = 0;
     byte badMsgByte = 0;
     byte *badMsgBytePtr;
-
 };
