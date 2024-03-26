@@ -5,12 +5,6 @@
 jbus bus(SLAVE_ADDY);
 byte *p;
 
-// bool newData = false;
-// byte buffer[128];
-// int newDataLen = 0;
-// bool pendingMsg = false;
-
-
 
 void setup()
 {
@@ -24,29 +18,11 @@ void setup()
 
 void loop()
 {
-  // Welecome back!
-  // Everything is working as expected, excpet that when I send two different messages they get jarbled. Check it out later.
-
-
   byte *p = bus.poll();
 
-
-  if (*p != 0x00)
-    {
-      while (*p != 0x00)
-        {
-          Serial.print(*p, HEX);
-          Serial.print(" ");
-          p++;
-        }
-      Serial.println();
-    }
-
-  // if ((*p & 0x7F) == SLAVE_ADDY)
+  // if (*p)
   //   {
-  //     if ((*p >> 7) == 1) Serial.print("Required to respond!\t");
-        
-  //     while (*p != 0x00)
+  //     while (*p)
   //       {
   //         Serial.print(*p, HEX);
   //         Serial.print(" ");
@@ -54,5 +30,19 @@ void loop()
   //       }
   //     Serial.println();
   //   }
+
+    if ((*p >> 7) == 1)
+      { 
+        byte msg[] = { 'B', 'O', 'O', 'B', 'S', '!', 0 };
+        bus.send(SLAVE_ADDY, false, msg);
+
+        while (*p)
+          {
+            Serial.print(*p, HEX);
+            Serial.print(" ");
+            p++;
+          }
+        Serial.println();
+    }
 
 }

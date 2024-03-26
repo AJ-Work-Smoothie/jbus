@@ -2,10 +2,29 @@
 #include <Arduino.h>
 
 /*
- * VERSION: ART_SW_2.0
- * DATE: 2021-09-30
+ * VERSION: JBUS 2.0
+ * DATE: 3/20/2024
 
-  Welcome to JBUS! Written by AJ Robinson starting 12/1/2023. 
+  Welcome to JBUS! Written by AJ Robinson starting 12/1/2023.
+  JBUS got revamped starting in 3/20/2024. The new version is called JBUS 2.0. 2.0 includes byte stuffing
+  and address rejection. You can now use all bytes, 0x00 -> 0xFF without any issues.
+
+  Get started with JBUS by creating a jbus object:
+  jbus bus(). bus() is overloaded. If you are a master, do not pass any arguments. If you are a slave, pass
+  in your address. By default, in slave configuration, poll() will reject any messages that are not addressed to the slave.
+  If you wish to see all the messages in slave config, set it to true with obj.rejectWrongAddress = true. 
+  
+  * poll() actively gets messages. It's non-blocking if there are no messages in Serial.available(). If there are messages,
+  it will process them first. To use poll(), create a pointer, and set it equal to poll(), i.e. byte *p = poll().
+  poll() will return a null pointer if there are no new messages to deal with. You can check if you have a message with if(*p). 
+  Poll returns with a pointer to the received messsage. *p is the address. We can check that address with 
+  the following: if ((*p & 0x7F) == slave_address) 
+  
+  Next we can check to see if we need to resond: if ((*p >> 7) == 1) Serial.println("Required to respond!");
+  Aternatively, we could OR the address with 0x80 to see if we are required to respond like so: if (*p == (slave_address | 0x80))
+
+  * send() simply requires an address, respond or not command, and a null terminated array to send. You must null terminate the array
+  being passed into send(). send() determines the length of the array using terminating null pointer.
   
   - Jbus can have up to 127 different addresses. 0 can never be used as an address.
   The JBUS packet structure is as follows: 
@@ -13,19 +32,12 @@
   Start Byte | R/W (MSB)  &  Address (LSB) | Message | Checksum | End Byte
   0xFF       |  0/1              0-127     | 0-255   | 0-255    | 0xFE
 
-  The checksum calculates the address + the message, i.e checksum = Address ^ Message. It's also constrained to be less than 0xFE.
-
-  - 0xFF & 0xFE are reserved for the start and end bytes.
+  - send() requires a null terminated array.
+  - 0xFF & 0xFE are used as the start and end bytes.
   - JBUS using byte stuffing. The escape character is 0xFD. If the message contains 0xFD, 0xFE, or 0xFF, it is suffixed by 0xFD
   - The R/W bit is the most significant bit of the address. If it is 1, the slave is required to respond. If it is 0, the slave is not required to respond.
-  - Poll returns with a pointer to the received messsage. *p is the address. We can check that address with the following:
-
-  if ((*p & 0x7F) == slave_address)
-
-  Next we can check to see if we need to resond:
-  if ((*p >> 7) == 1) Serial.println("Required to respond!");
-  Aternatively, we could OR the address with 0x80 to see if we are required to respond like so:
-  if (*p == (slave_address | 0x80))
+  - The checksum calculates the address + the message, i.e checksum = Address ^ Message.
+  - cereal is used to represent a corresponding serial port. Please change below if need be. 
 
 */
 
@@ -50,15 +62,28 @@ class jbus
     
     jbus(); // master config
     jbus(byte slaveAddress); // slave config
-    void init(unsigned long buad);
-    // Polls for a message of a specific length. Pass in the length of the message. Poll is NOT blocking
-    byte* poll();
-    byte* processMessage();
-    // sends packet. If request is true, it will prefix the message with msgRFQ instead of standard msg
-    void send(byte address, bool requestData, byte msgArr[]); // send packet
-    byte calcChecksum(byte *buffPtr, int packetLen); // returns the checksum
+      bool rejectWrongAddress = false;
+    void init(unsigned long buad); // must call in setup.
+    /**
+     * @brief This function polls the bus for messages. If there are no messages, it returns a null pointer. Check
+     * to see if there is a message with if(*p). If there is a message, *p is the address. You can check that address with
+     * the following: if ((*p & 0x7F) == slave_address). Next we can check to see if we need to resond: if ((*p >> 7) == 1)
+     * @return pointer to the received message.
+    */
+    byte* poll(); // returns a pointer to the message. 
+    /**
+     * @brief This function sends a message to the bus. If requestData is true, the slave is required to respond. 
+     * If requestData is false, the slave is not required to respond. The message must be null terminated
+     * @param address The address of the slave
+     * @param requestData If true, the slave is required to respond
+     * @param msgArr The message to send must be null terminated
+    */
+    void send(byte address, bool requestData, byte msgArr[]);
+    
 
   private:
+
+    byte _calcChecksum(byte *buffPtr, int packetLen); // returns the checksum
 
     #define STARTBYTE       0xFF
     #define ENDBYTE         0xFE
@@ -67,56 +92,7 @@ class jbus
     #define WRAPPER_COUNT   4
     
     byte _slaveAddress = 0;
-    int checksum = 0;
     byte badMsgByte = 0;
     byte *badMsgBytePtr;
 
 };
-
-
-/*
-byte* jbus::poll()
-{
-  static byte rawBuffer[MAXLEN];
-  static byte packet[MAXLEN];
-  static int bufferIndex = 0;
-  static int SOM = 0;
-
-  if (cereal.available() > 0)
-    {
-      if (bufferIndex >= MAXLEN) bufferIndex = 0;
-      rawBuffer[bufferIndex++] = cereal.read();
-      // if we get a byte that is start byte, let's save that index
-      if (rawBuffer[bufferIndex - 1] == STARTBYTE) SOM = bufferIndex - 1;
-      if (rawBuffer[bufferIndex - 1] == ENDBYTE)
-        {
-          int packetLen = bufferIndex - SOM;
-          // return if the message is too short
-          if (packetLen <= WRAPPER_COUNT) return badMsgBytePtr;
-          // copy the message from rawBuff into the packet array
-          for (int i = SOM; i < SOM + packetLen; i++) packet[i - SOM] = rawBuffer[i];
-
-          if (debugMode)
-            {
-              for (int i = 0; i < packetLen; i++) 
-                {
-                  Serial.print(packet[i], HEX); 
-                  Serial.print(" ");
-                }
-              Serial.println();
-            }
-
-          int tempCheckSum = calcChecksum(packet, packetLen); // get the checksum
-          // if the checksum fails
-          if (!tempCheckSum == rawBuffer[packetLen - 2]) return badMsgBytePtr;
-          // truncate the startbyte, checksum, and endbyte
-          for (int i = 0; i < packetLen - 3; i++) 
-              {
-                packet[i] = packet[i + 1];
-                if (i == packetLen - 4) packet[i + 1] = 0; // set the last byte to 0
-              }      
-          return packet;
-        }    
-    } // if cereal.available
-  return badMsgBytePtr;
-} */

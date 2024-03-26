@@ -1,5 +1,5 @@
 {
-    "port": "COM8",
+    "port": "COM5",
     "board": "arduino:avr:mega",
     "sketch": "jbus.ino",
     "configuration": "cpu=atmega2560",

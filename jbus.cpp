@@ -3,12 +3,14 @@
 jbus::jbus()
 {
   badMsgBytePtr = &badMsgByte; // set badMsg to point to badmsg, a byte equaling 0;
+  rejectWrongAddress = false;
 }
 
 jbus::jbus(byte slaveAddress)
 {
   badMsgBytePtr = &badMsgByte; // set badMsg to point to badmsg, a byte equaling 0;
   _slaveAddress = slaveAddress;
+  rejectWrongAddress = true;
 }
 
 void jbus::init(unsigned long buad)
@@ -19,20 +21,27 @@ void jbus::init(unsigned long buad)
 
 byte* jbus::poll()
 {
-  static byte buffIndex = 0;
+  /**
+   * We initialize buffIndex to 1. Why? Instead of using a flag to figure out if we've gotten a new start byte, we use SOM.
+   * If SOM is != 0, that means we got a start message byte. We are reservering zero so that when SOM = 0, we know that 
+   * we haven't gotten a start flag. We also have to start buffIndex at 1 so that we don't put our start byte in index 0, making 
+   * SOM 0, meaning we'll miss that start byte. We must reset buffIndex to 1 instead of 0.
+  */
+  static byte buffIndex = 1;
   static byte rawBuffer[MAXLEN];
   static byte packet[MAXLEN];
 
-  // clear out packet
-
   if (cereal.available() > 0)
     {
-      if (buffIndex >= MAXLEN - 1) buffIndex = 0;
+      if (buffIndex >= MAXLEN - 1) buffIndex = 1;
       rawBuffer[buffIndex++] = cereal.read();
+      //Serial.print(rawBuffer[buffIndex - 1], HEX); Serial.print(" "); // print the byte that was just read
+      //if (rawBuffer[buffIndex - 1] == ENDBYTE) Serial.println(); // if we hit the end byte, print a newline
     }
+
+
   // find the start and end of the message
   int SOM = 0, EOM = 0, packetLen = 0;
-
   // gets the start of the message
   for (int i = 0; i < buffIndex - 1; i++)
     {
@@ -60,15 +69,17 @@ byte* jbus::poll()
         }
       if(debugMode) Serial.println();
       // reset variables
-      SOM = EOM = 0;
+      SOM = EOM = 0; buffIndex = 1;
       for (int i = 0; i < MAXLEN; i++) rawBuffer[i] = 0;
 
-      byte tempCheckSum = calcChecksum(packet, packetLen); // get the checksum
+      byte tempCheckSum = _calcChecksum(packet, packetLen); // get the checksum
       // if the checksum fails
       if (tempCheckSum != packet[packetLen - 2]) return badMsgBytePtr;
+      // if the address is incorrect and we are in reject mode, return
+      if (rejectWrongAddress && (packet[1] & 0x7F) != _slaveAddress) return badMsgBytePtr;
+
       // byte unstuffing!
       int escapeChars = 0; // how many escape chars we have
-
       for (int i = 0; i < packetLen; i++)
         {
           if (packet[i] == ESCAPEBYTE)
@@ -112,6 +123,18 @@ void jbus::send(byte address, bool requestData, byte msgArr[])
 {
   int msgLen = 0, packetLen = 0;
   while (msgArr[msgLen] != 0) { msgLen++; } // determine the length of the message.
+
+  // if (debugMode) 
+  //   {
+  //     Serial.print("Packet Received: ");
+  //     for (int i = 0; i < msgLen; i++) 
+  //       {
+  //         Serial.print(msgArr[i], HEX);
+  //         Serial.print(" ");
+  //       }
+  //       Serial.println();
+  //   }
+  
    
   packetLen = msgLen + WRAPPER_COUNT;
   byte packet[packetLen];
@@ -140,7 +163,7 @@ void jbus::send(byte address, bool requestData, byte msgArr[])
           }
       }
     
-  packet[packetLen - 2] = calcChecksum(packet, packetLen);
+  packet[packetLen - 2] = _calcChecksum(packet, packetLen);
   packet[packetLen - 1] = ENDBYTE; // remember, zero indexed
   cereal.write(packet, packetLen);
 
@@ -156,13 +179,12 @@ void jbus::send(byte address, bool requestData, byte msgArr[])
     }
 }
 
-byte jbus::calcChecksum(byte *buffPtr, int packetLen)
+byte jbus::_calcChecksum(byte *buffPtr, int packetLen)
 {
   byte checksum = 0;
   // we are going to skip the first 0xFF, because it's always just that. 
   // The checksum is the Address ^(XOR) Message. 
   for (int i = 1; i < packetLen - 2; i++) { checksum ^= buffPtr[i]; }
-  if (checksum >= 0xFE) checksum -= 2; // this prevents it from ever being anything from 0xFA to 0xFF
 
   if (debugChecksum)
     {
