@@ -55,7 +55,9 @@
 class jbus
 {
   public:
-    bool debugMode = false;
+    bool debugRaw = false;
+    bool debugRead = false;
+    bool debugWrite = false;
     bool debugChecksum = false;
     
     jbus(); // master config
@@ -76,16 +78,8 @@ class jbus
      * @param requestData If true, the slave is required to respond
      * @param msgArr The message to send must be null terminated
     */
-    void send(byte address, bool requestData, byte msgArr[]);
-    /**
-     * @brief This function sends a message to the bus. If requestData is true, the slave is required to respond. 
-     * If you need to send a 0 in the data, use the function and pass in the length of the message. Previous version
-     * uses the 0 to determine the length of the message, so if you need to send 0, use this function.
-     * @param address The address of the slave
-     * @param requestData If true, the slave is required to respond
-     * @param msgArr The message to send must be null terminated
-    */
-   void send(byte address, bool requestData, byte msgArr[], int arrLen);
+    // void send(byte address, bool requestData, byte msgArr[]); // this one is causing problems because I don't null terminate arrays
+    void send(byte address, bool requestData, byte msgArr[], int arrLen);
     
 
   private:
@@ -95,7 +89,7 @@ class jbus
     #define STARTBYTE       0xFF
     #define ENDBYTE         0xFE
     #define ESCAPEBYTE      0xFD
-    #define MAXLEN          64
+    #define MAXLEN          32
     #define WRAPPER_COUNT   4
     
     byte _slaveAddress = 0;
