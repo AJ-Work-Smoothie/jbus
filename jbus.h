@@ -2,51 +2,51 @@
 #include <Arduino.h>
 
 /*
- * VERSION: ART_SW_1.5
- * DATE: 2021-09-30
- * This is the last stable version before making major changes.
- * JBUS needs a major update, and the the master byte array needs to be swapped for a struct. 
+ * VERSION: JBUS 2.0
+ * DATE: 3/20/2024
 
-  Welcome to JBUS! Written by AJ Robinson 12/1/2023
+  Welcome to JBUS! Written by AJ Robinson starting 12/1/2023.
+  JBUS got revamped starting in 3/20/2024. The new version is called JBUS 2.0. 2.0 includes byte stuffing
+  and address rejection. You can now use all bytes, 0x00 -> 0xFF without any issues.
 
-  JBUS works off of two main commands, poll() & send()
+  Get started with JBUS by creating a jbus object:
+  jbus bus(). bus() is overloaded. If you are a master, do not pass any arguments. If you are a slave, pass
+  in your address. By default, in slave configuration, poll() will reject any messages that are not addressed to the slave.
+  If you wish to see all the messages in slave config, set it to true with obj.rejectWrongAddress = true. 
+  
+  * poll() actively gets messages. It's non-blocking if there are no messages in Serial.available(). If there are messages,
+  it will process them first. To use poll(), create a pointer, and set it equal to poll(), i.e. byte *p = poll().
+  poll() will return a null pointer if there are no new messages to deal with. You can check if you have a message with if(*p). 
+  Poll returns with a pointer to the received messsage. *p is the address. We can check that address with 
+  the following: if ((*p & 0x7F) == slave_address) 
+  
+  Next we can check to see if we need to resond: if (*p >> 7) Serial.println("Required to respond!");
+  Aternatively, we could OR the address with 0x80 to see if we are required to respond like so: if (*p == (slave_address | 0x80))
 
-  Poll looks for a new message and returns a pointer. If a new message hasn't been recieved,
-  the returned pointer will = 0. If a new message has been received, the pointer will equal
-  the first value of the new received message. You can then access that message by using 
-  pointer[i]. A quick shortcut to access pointer[0] is to just use *pointer.
+  * send() simply requires an address, respond or not command, and a null terminated array to send. You must null terminate the array
+  being passed into send(). send() determines the length of the array using terminating null pointer.
+  
+  - Jbus can have up to 127 different addresses. 0 can never be used as an address.
+  The JBUS packet structure is as follows: 
 
-  You must tell poll() what size message (NOT ENTIRE ARRAY LENGTH) it's looking for. If the 
-  message received is a different size then what you are requesting, then checksum will fail.
+  Start Byte | R/W (MSB)  &  Address (LSB) | Message | Checksum | End Byte
+  0xFF       |  0/1              0-127     | 0-255   | 0-255    | 0xFE
 
-  Send takes a byte array as an argument. Since arrays are passed as pointers, you also need to 
-  pass the array size. send() will wrap your data into a nice little packet. The first byte of
-  the packet will be 0xFF (if you set requestData argument to false) or it will equal 0xFD if
-  set the requestData argument to true. After this start byte, your passed byte array will be
-  appended. Next, a checksum is calculated and appended, and lastly, a stop byte is appended. The
-  message structure looks like this:
-
-  |   Start Byte  |   Passed Array  |   Checksum  |   Stop Byte |
-
-  SignOnASA() sends a special sign on message - signOnCMD - with the start byte as request. It
-  will repeat this every 200ms. In the meantime, it is using poll() to look for a message. If
-  it gets a message with the start byte set to true, it checks the checksum. If the checksum
-  matches the checksum for a sign on message, it assumes the correct message was sent and it
-  returns true with a proper sign on.
-
-  respondToTable() is what ASAV2 should always be running. It simply polls for messages, and 
-  it if gets a RFQ message, it will handle it accordingly. Otherwise, it just does what the 
-  incoming messages as for it to do. 
-
-
-
-
+  - send() requires a null terminated array.
+  - 0xFF & 0xFE are used as the start and end bytes.
+  - JBUS using byte stuffing. The escape character is 0xFD. If the message contains 0xFD, 0xFE, or 0xFF, it is suffixed by 0xFD
+  - The R/W bit is the most significant bit of the address. If it is 1, the slave is required to respond. If it is 0, the slave is not required to respond.
+  - The checksum calculates the address + the message, i.e checksum = Address ^ Message.
+  - cereal is used to represent a corresponding serial port. Please change below if need be. 
 
 */
+#ifdef ARDUINO_AVR_MICRO
+#define cereal (Serial1)
+#endif
 
 #ifdef ARDUINO_AVR_MEGA2560
 #define cereal (Serial3)
-#define samd21Port1Begin(a)
+//#define samd21Port1Begin(a)
 #endif
 
 #ifdef ARDUINO_SAMD_ZERO
@@ -55,34 +55,47 @@
 #define samd21Port1Begin(a)  (PORT1_RS232_BEGIN(a))
 #endif
 
-#define STANDARD_MSG_SIZE 4
-
 class jbus
 {
   public:
-    jbus(); 
-    void init(unsigned long buad);
-    // Polls for a message of a specific length. Pass in the length of the message. Poll is NOT blocking
-    byte* poll(int msgLen); 
-    // sends packet. If request is true, it will prefix the message with msgRFQ instead of standard msg
-    void send(byte msgArr[], int msgLen, bool requestData); // send packet
-    void send(byte msgArr[], int msgLen, byte customStartByte); // send packet
-    void debugSet(bool mode);
-    void reset();   
+    bool debugRaw = false;
+    bool debugRead = false;
+    bool debugWrite = false;
+    bool debugChecksum = false;
+    
+    jbus(); // master config
+    jbus(byte slaveAddress); // slave config
+      bool rejectWrongAddress = false;
+    void init(unsigned long buad); // must call in setup.
+    /**
+     * @brief This function polls the bus for messages. If there are no messages, it returns a null pointer. Check
+     * to see if there is a message with if(*p). If there is a message, *p is the address. You can check that address with
+     * the following: if ((*p & 0x7F) == slave_address). Next we can check to see if we need to resond: if ((*p >> 7) == 1)
+     * @return pointer to the received message.
+    */
+    byte* poll(); // returns a pointer to the message. 
+    /**
+     * @brief This function sends a message to the bus. If requestData is true, the slave is required to respond. 
+     * If requestData is false, the slave is not required to respond. The message must be null terminated
+     * @param address The address of the slave
+     * @param requestData If true, the slave is required to respond
+     * @param msgArr The message to send must be null terminated
+    */
+    // void send(byte address, bool requestData, byte msgArr[]); // this one is causing problems because I don't null terminate arrays
+    void send(byte address, bool requestData, byte msgArr[], int arrLen);
+    
 
   private:
-    
-    #define PACKETSTART   0xFF
-    #define PACKETEND     0xFE
-    #define MSGSTART      1       // index of the packet array where the useful message starts
-    #define REQUEST       0xFD
-    #define MAXLEN        20
 
-    int checksum = 0;
+    byte _calcChecksum(byte *buffPtr, int packetLen); // returns the checksum
+
+    #define STARTBYTE       0xFF
+    #define ENDBYTE         0xFE
+    #define ESCAPEBYTE      0xFD
+    #define MAXLEN          32
+    #define WRAPPER_COUNT   4
+    
+    byte _slaveAddress = 0;
     byte badMsgByte = 0;
     byte *badMsgBytePtr;
-
-    bool debugMode = false;
-    
-
 };
