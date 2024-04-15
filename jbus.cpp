@@ -15,8 +15,12 @@ jbus::jbus(byte slaveAddress)
 
 void jbus::init(unsigned long buad)
 {
-  cereal.begin(buad);
-  samd21Port1Begin(buad);
+  #ifdef ARDUINO_SAMD_ZERO
+     samd21Port1Begin(buad); 
+  #else 
+    cereal.begin(buad);
+  #endif  
+  
 }
 
 byte* jbus::poll()

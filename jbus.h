@@ -40,10 +40,13 @@
   - cereal is used to represent a corresponding serial port. Please change below if need be. 
 
 */
+#ifdef ARDUINO_AVR_MICRO
+#define cereal (Serial1)
+#endif
 
 #ifdef ARDUINO_AVR_MEGA2560
 #define cereal (Serial3)
-#define samd21Port1Begin(a)
+//#define samd21Port1Begin(a)
 #endif
 
 #ifdef ARDUINO_SAMD_ZERO
