@@ -127,31 +127,17 @@ byte* jbus::poll()
 
 }
 
-void jbus::send(byte address, bool requestData, byte msgArr[], int arrLen)
+void jbus::send(byte address, byte msgArr[], int arrLen)
 {
   int packetLen = 0;
   int msgLen = arrLen;
-
-  // if (debugMode) 
-  //   {
-  //     Serial.print("Packet Received: ");
-  //     for (int i = 0; i < msgLen; i++) 
-  //       {
-  //         Serial.print(msgArr[i], HEX);
-  //         Serial.print(" ");
-  //       }
-  //       Serial.println();
-  //   }
-  
    
   packetLen = msgLen + WRAPPER_COUNT;
   byte packet[packetLen];
   for (int i = 0; i < packetLen; i++) packet[i] = 0; // initialize all values to 0
 
   packet[0] = STARTBYTE; // start byte
-  if (requestData) { packet[1] = (address |= 1<<7); } // if we are requesting data, set the MSB to 1,
-  else { packet[1] = (address = address &= ~(1<<7)); } // if we are sending data, set the MSB to 0
-
+  packet[1] = address; // address byte
 
     // instead of using msglen, we're using packetlen, because packen len increases as we add escape bytes
     int packetIndex = 2;     // we're starting on index two of packet len, start byte and address are already set
@@ -187,68 +173,6 @@ void jbus::send(byte address, bool requestData, byte msgArr[], int arrLen)
     }
 }
 
-
-
-/* void jbus::send(byte address, bool requestData, byte msgArr[])
-{
-  int msgLen = 0, packetLen = 0;
-  while (msgArr[msgLen] != 0) { msgLen++; } // determine the length of the message.
-
-  // if (debugMode) 
-  //   {
-  //     Serial.print("Packet Received: ");
-  //     for (int i = 0; i < msgLen; i++) 
-  //       {
-  //         Serial.print(msgArr[i], HEX);
-  //         Serial.print(" ");
-  //       }
-  //       Serial.println();
-  //   }
-  
-   
-  packetLen = msgLen + WRAPPER_COUNT;
-  byte packet[packetLen];
-  for (int i = 0; i < packetLen; i++) packet[i] = 0; // initialize all values to 0
-
-  packet[0] = STARTBYTE; // start byte
-  if (requestData) { packet[1] = (address |= 1<<7); } // if we are requesting data, set the MSB to 1,
-  else { packet[1] = (address = address &= ~(1<<7)); } // if we are sending data, set the MSB to 0
-
-
-    // instead of using msglen, we're using packetlen, because packen len increases as we add escape bytes
-    int packetIndex = 2;     // we're starting on index two of packet len, start byte and address are already set
-    for (int i = 2; i < msgLen + 2; i++ )
-      {
-        if (msgArr[i - 2] == 0xFD || msgArr[i - 2] == 0xFE || msgArr[i - 2] == 0xFF)
-          {
-            packet[packetIndex] = ESCAPEBYTE;
-            packet[packetIndex + 1] = msgArr[i - 2] ^ 0x20;
-            packetIndex += 2;
-            packetLen++; // we added in an addtional byte, so we need to increment the packet length
-          }
-        else 
-          {
-            packet[packetIndex] = msgArr[i - 2];
-            packetIndex++;
-          }
-      }
-    
-  packet[packetLen - 2] = _calcChecksum(packet, packetLen);
-  packet[packetLen - 1] = ENDBYTE; // remember, zero indexed
-  cereal.write(packet, packetLen);
-
-  if (debugWrite)
-    {
-      Serial.print("MSG SENT: ");
-      for (int i = 0; i < packetLen; i++)
-        {
-          Serial.print(packet[i]);
-          Serial.print(" ");
-        }
-      Serial.println();
-    }
-}
- */
 
 byte jbus::_calcChecksum(byte *buffPtr, int packetLen)
 {

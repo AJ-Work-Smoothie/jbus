@@ -29,13 +29,12 @@
   - Jbus can have up to 127 different addresses. 0 can never be used as an address.
   The JBUS packet structure is as follows: 
 
-  Start Byte | R/W (MSB)  &  Address (LSB) | Message | Checksum | End Byte
-  0xFF       |  0/1              0-127     | 0-255   | 0-255    | 0xFE
+  Start Byte |  Address (LSB) | Message | Checksum | End Byte
+  0xFF       |      0-127     | 0-255   | 0-255    | 0xFE
 
   - send() requires a null terminated array.
   - 0xFF & 0xFE are used as the start and end bytes.
   - JBUS using byte stuffing. The escape character is 0xFD. If the message contains 0xFD, 0xFE, or 0xFF, it is suffixed by 0xFD
-  - The R/W bit is the most significant bit of the address. If it is 1, the slave is required to respond. If it is 0, the slave is not required to respond.
   - The checksum calculates the address + the message, i.e checksum = Address ^ Message.
   - cereal is used to represent a corresponding serial port. Please change below if need be. 
 
@@ -81,8 +80,8 @@ class jbus
      * @param requestData If true, the slave is required to respond
      * @param msgArr The message to send must be null terminated
     */
-    // void send(byte address, bool requestData, byte msgArr[]); // this one is causing problems because I don't null terminate arrays
-    void send(byte address, bool requestData, byte msgArr[], int arrLen);
+    // void send(byte address, byte msgArr[]); // this one is causing problems because I don't null terminate arrays
+    void send(byte address, byte msgArr[], int arrLen);
     
 
   private:
