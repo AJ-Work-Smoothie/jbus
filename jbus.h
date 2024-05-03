@@ -82,6 +82,7 @@ class jbus
     */
     // void send(byte address, byte msgArr[]); // this one is causing problems because I don't null terminate arrays
     void send(byte address, byte msgArr[], int arrLen);
+    void clearBuffer();
     
 
   private:

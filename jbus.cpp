@@ -197,3 +197,8 @@ byte jbus::_calcChecksum(byte *buffPtr, int packetLen)
 
   return checksum;
 }
+
+void jbus::clearBuffer()
+{
+  while (cereal.available() > 0) cereal.read();
+}
