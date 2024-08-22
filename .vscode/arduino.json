@@ -1,11 +1,12 @@
 {
     "port": "COM17",
-    "board": "arduino:avr:micro",
-    "sketch": "jbus.ino",
+    "board": "arduino:avr:mega",
     "buildPreferences": [
         [
             "build.extra_flags",
             "-D__AVR_ATmega2560__"
         ]
-    ]
+    ],
+    "configuration": "cpu=atmega2560",
+    "sketch": "jbus.ino"
 }
