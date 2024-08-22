@@ -2,8 +2,9 @@
 #include <Arduino.h>
 
 /*
- * VERSION: JBUS 2.0
+ * VERSION: JBUS 3.0
  * DATE: 3/20/2024
+ * Adding support for RS485 on the P1AM!
 
   Welcome to JBUS! Written by AJ Robinson starting 12/1/2023.
   JBUS got revamped starting in 3/20/2024. The new version is called JBUS 2.0. 2.0 includes byte stuffing

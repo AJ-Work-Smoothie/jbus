@@ -1,17 +1,24 @@
 #include "jbus.h"
 
+#define SLAVE_ADDY 14
+
+jbus bus(SLAVE_ADDY);
+byte *p;
+
+byte signOn[] = {'A', 'S', 'S', '!' };
 
 
 void setup()
 {
   Serial.begin(115200);
-
+  bus.init(9600);
+  bus.debugRaw = true;
 }
 
 
 void loop()
 {
-  // byte *p = bus.poll();
+  byte *p = bus.poll();
   // if (*p)
   //   {
   //     while (*p)
