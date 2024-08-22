@@ -7,7 +7,7 @@ byte *p;
 
 byte signOn[] = {0x10, 'A', 'S', 'S', '!' };
 
-
+__FlashStringHelper
 void setup()
 {
   Serial.begin(115200);
