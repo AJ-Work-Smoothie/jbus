@@ -13,12 +13,12 @@ jbus::jbus(byte slaveAddress)
   rejectWrongAddress = true;
 }
 
-void jbus::init(unsigned long buad)
+void jbus::init(unsigned long baud)
 {
   // remember PPDs are processed at runtime. This means only one of these lines of code will be here
   // afer compilation
   #ifdef ARDUINO_SAMD_ZERO
-     CREATE_PORT(PORT_NUM, PROTOCOL, BAUD_RATE);
+     CREATE_PORT(JBUS_PORT, JBUS_PROTOCOL, baud);
   #else 
     cereal.begin(buad);
   #endif  
@@ -164,13 +164,13 @@ void jbus::send(byte address, const char *msgArr)
   packet[packetLen - 1] = ENDBYTE; // remember, zero indexed
 
   
-  #if (PROTOCOL == 485)
+  #if (JBUS_PROTOCOL == 485)
     cereal.beginTransmission(); // if we selected 485, these lines will be compiled into the run enviornment
   #endif 
 
   cereal.write(packet, packetLen);
 
-  #if (PROTOCOL == 485)
+  #if (JBUS_PROTOCOL == 485)
     cereal.endTransmission();
   #endif 
 
@@ -217,7 +217,16 @@ void jbus::send(byte address, uint8_t *msgArr, int arrLen)
     
   packet[packetLen - 2] = _calcChecksum(packet, packetLen);
   packet[packetLen - 1] = ENDBYTE; // remember, zero indexed
+
+  #if (JBUS_PROTOCOL == 485)
+    cereal.beginTransmission(); // if we selected 485, these lines will be compiled into the run enviornment
+  #endif 
+
   cereal.write(packet, packetLen);
+
+  #if (JBUS_PROTOCOL == 485)
+    cereal.endTransmission();
+  #endif 
 
   if (debugWrite)
     {

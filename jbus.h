@@ -53,7 +53,7 @@ class jbus
     jbus(); // master config
     jbus(byte slaveAddress); // slave config
       bool rejectWrongAddress = false;
-    void init(unsigned long buad); // must call in setup.
+    void init(unsigned long baud); // must call in setup.
     /**
      * @brief This function polls the bus for messages. If there are no messages, it returns a null pointer. Check
      * to see if there is a message with if(*p). If there is a message, *p is the address. You can check that address with     * 
