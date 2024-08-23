@@ -20,7 +20,7 @@ void jbus::init(unsigned long baud)
   #ifdef ARDUINO_SAMD_ZERO
      CREATE_PORT(JBUS_PORT, JBUS_PROTOCOL, baud);
   #else 
-    cereal.begin(buad);
+    cereal.begin(baud);
   #endif  
   
 }

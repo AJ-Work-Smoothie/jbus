@@ -1,29 +1,24 @@
 #define JBUS_PORT   1
 #define JBUS_PROTOCOL  485
 
-#ifdef ARDUINO_AVR_MICRO
-  #define SERIAL_PORT 1
-  #define BAUD_RATE   9600
-  
-  #define cereal (Serial1)
-  #if !defined (PORTNUM) || !defined (JBUS_PROTOCOL) || !defined (BAUDRATE)
-    #error Please define PORTNUM, JBUS_PROTOCOL, and BAUDRATE
-  #endif
+
+#if !defined(JBUS_PORT)
+  #error JBUS_PORT not defined - Set equal to 1 - 3
 #endif
 
-#ifdef ARDUINO_AVR_MEGA2560
-  #define JBUS_PORT  3
-  #define BAUD_RATE 115200
-
-  #define CEREAL_PORT_EXPAND(JBUS_PORT, BAUD_RATE) Serial##
-
-  #define cereal (Serial3)
-#endif
+#if defined(ARDUINO_AVR_MICRO) || defined(ARDUINO_AVR_MEGA2560)
+  #define CEREAL_PORT_EXPAND(jbus_port) Serial##jbus_port
+  #define CEREAL_PORT_WRAP(jbus_port) CEREAL_PORT_EXPAND(jbus_port)
+  #define cereal CEREAL_PORT_WRAP(JBUS_PORT)
+  #undef JBUS_PROTOCOL // we're not using 232 or 485, so undefine this so that it doesn't
+  // try to call Serial1.beginTransmission within jbus.cpp, which is an RS485 thing
+#endif 
 
 #ifdef ARDUINO_SAMD_ZERO
   #include <P1AM_Serial.h>
-
-
+  #if !defined(JBUS_PROTOCOL)
+    #error JBUS_PROTOCOL not defined. Please set to Serial, 232, or 485
+  #endif
   #if (JBUS_PROTOCOL == 485)
     #include <ArduinoRS485.h>
   #endif

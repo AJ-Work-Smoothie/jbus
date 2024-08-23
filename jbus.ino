@@ -2,7 +2,7 @@
 #include "jbus.h"
 // master sketch
 jbus bus;
-
+byte arr[5] = {1, 2, 3, 4, 5};
 void setup()
 {
   Serial.begin(115200);
@@ -18,7 +18,7 @@ void setup()
 
 void loop()
 {
-  bus.send(0x11, "Hi?");
+  bus.send(0x11, arr, sizeof(arr));
   delay(1000);
   // byte *p = bus.poll();
   // if (*p)
