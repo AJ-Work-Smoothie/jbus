@@ -1,16 +1,25 @@
+#include <P1AM.h>
 #include "jbus.h"
-
-
+// master sketch
+jbus bus;
 
 void setup()
 {
   Serial.begin(115200);
+  bus.init(250000);
+  
+  bus.debugWrite = true;
+  
+  Serial.println(); Serial.println("Ready to go!"); Serial.println();
 
+  //while (!Serial);
 }
 
 
 void loop()
 {
+  bus.send(0x11, "Hi?");
+  delay(1000);
   // byte *p = bus.poll();
   // if (*p)
   //   {

@@ -80,3 +80,51 @@ void loop()
     }
  */
 }
+
+
+#ifdef ARDUINO_AVR_MICRO
+  #define cereal (Serial1)
+#endif
+
+#ifdef ARDUINO_AVR_MEGA2560
+  #define cereal (Serial3)
+#endif
+
+#ifdef ARDUINO_SAMD_ZERO 
+  #include <P1AM_Serial.h>
+  #include <ArduinoRS485.h>
+
+  // Define macros for each port and protocol
+  #ifdef JBUS232_PORT1
+    #define cereal (Port1)
+    #define beginSamd21PortX(a)  (PORT1_RS232_BEGIN(a))
+  #elif defined(JBUS485_PORT1)
+    #define cereal (Port1)
+    #define beginSamd21PortX(a)  (PORT1_RS485_BEGIN(a))
+  #endif
+
+  #ifdef JBUS232_PORT2
+    #define cereal (Port2)
+    #define beginSamd21PortX(a)  (PORT2_RS232_BEGIN(a))
+  #elif defined(JBUS485_PORT2)
+    #define cereal (Port2)
+    #define beginSamd21PortX(a)  (PORT2_RS485_BEGIN(a))
+  #endif
+
+  #ifdef JBUS232_PORT3
+    #define cereal (Port3)
+    #define beginSamd21PortX(a)  (PORT3_RS232_BEGIN(a))
+  #elif defined(JBUS485_PORT3)
+    #define cereal (Port3)
+    #define beginSamd21PortX(a)  (PORT3_RS485_BEGIN(a))
+  #endif
+
+  #ifdef JBUS232_PORT4
+    #define cereal (Port4)
+    #define beginSamd21PortX(a)  (PORT4_RS232_BEGIN(a))
+  #elif defined(JBUS485_PORT4)
+    #define cereal (Port4)
+    #define beginSamd21PortX(a)  (PORT4_RS485_BEGIN(a))
+  #endif
+
+#endif

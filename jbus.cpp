@@ -15,8 +15,10 @@ jbus::jbus(byte slaveAddress)
 
 void jbus::init(unsigned long buad)
 {
+  // remember PPDs are processed at runtime. This means only one of these lines of code will be here
+  // afer compilation
   #ifdef ARDUINO_SAMD_ZERO
-     samd21Port1Begin(buad); 
+     CREATE_PORT(PORT_NUM, PROTOCOL, BAUD_RATE);
   #else 
     cereal.begin(buad);
   #endif  
@@ -127,21 +129,77 @@ byte* jbus::poll()
 
 }
 
-void jbus::send(byte address, byte msgArr[], int arrLen)
+void jbus::send(byte address, const char *msgArr)
 {
   int packetLen = 0;
-  int msgLen = arrLen;
-   
-  packetLen = msgLen + WRAPPER_COUNT;
+  int arrLen = 0;
+  while (msgArr[arrLen]) arrLen++;
+
+  packetLen = arrLen + WRAPPER_COUNT;
   byte packet[packetLen];
   for (int i = 0; i < packetLen; i++) packet[i] = 0; // initialize all values to 0
 
   packet[0] = STARTBYTE; // start byte
   packet[1] = address; // address byte
 
-    // instead of using msglen, we're using packetlen, because packen len increases as we add escape bytes
+    // instead of using arrLen, we're using packetlen, because packen len increases as we add escape bytes
     int packetIndex = 2;     // we're starting on index two of packet len, start byte and address are already set
-    for (int i = 2; i < msgLen + 2; i++ )
+    for (int i = 2; i < arrLen + 2; i++ )
+      {
+        if (msgArr[i - 2] == 0xFD || msgArr[i - 2] == 0xFE || msgArr[i - 2] == 0xFF)
+          {
+            packet[packetIndex] = ESCAPEBYTE;
+            packet[packetIndex + 1] = msgArr[i - 2] ^ 0x20;
+            packetIndex += 2;
+            packetLen++; // we added in an addtional byte, so we need to increment the packet length
+          }
+        else 
+          {
+            packet[packetIndex] = msgArr[i - 2];
+            packetIndex++;
+          }
+      }
+    
+  packet[packetLen - 2] = _calcChecksum(packet, packetLen);
+  packet[packetLen - 1] = ENDBYTE; // remember, zero indexed
+
+  
+  #if (PROTOCOL == 485)
+    cereal.beginTransmission(); // if we selected 485, these lines will be compiled into the run enviornment
+  #endif 
+
+  cereal.write(packet, packetLen);
+
+  #if (PROTOCOL == 485)
+    cereal.endTransmission();
+  #endif 
+
+  if (debugWrite)
+    {
+      Serial.print("MSG SENT: ");
+      for (int i = 0; i < packetLen; i++)
+        {
+          Serial.print(packet[i]);
+          Serial.print(" ");
+        }
+      Serial.println();
+    }
+}
+
+void jbus::send(byte address, uint8_t *msgArr, int arrLen)
+{
+  int packetLen = 0;
+   
+  packetLen = arrLen + WRAPPER_COUNT;
+  byte packet[packetLen];
+  for (int i = 0; i < packetLen; i++) packet[i] = 0; // initialize all values to 0
+
+  packet[0] = STARTBYTE; // start byte
+  packet[1] = address; // address byte
+
+    // instead of using arrLen, we're using packetlen, because packen len increases as we add escape bytes
+    int packetIndex = 2;     // we're starting on index two of packet len, start byte and address are already set
+    for (int i = 2; i < arrLen + 2; i++ )
       {
         if (msgArr[i - 2] == 0xFD || msgArr[i - 2] == 0xFE || msgArr[i - 2] == 0xFF)
           {
@@ -172,7 +230,6 @@ void jbus::send(byte address, byte msgArr[], int arrLen)
       Serial.println();
     }
 }
-
 
 byte jbus::_calcChecksum(byte *buffPtr, int packetLen)
 {

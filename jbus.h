@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include "jbus_config.h"
 
 /*
  * VERSION: JBUS 3.0
@@ -13,7 +14,7 @@
   Get started with JBUS by creating a jbus object:
   jbus bus(). bus() is overloaded. If you are a master, do not pass any arguments. If you are a slave, pass
   in your address. By default, in slave configuration, poll() will reject any messages that are not addressed to the slave.
-  If you wish to see all the messages in slave config, set it to true with obj.rejectWrongAddress = true. 
+  If you wish to see all the messages in slave config, set it to true with object.rejectWrongAddress = true. 
   
   * poll() actively gets messages. It's non-blocking if there are no messages in Serial.available(). If there are messages,
   it will process them first. To use poll(), create a pointer, and set it equal to poll(), i.e. byte *p = poll().
@@ -40,20 +41,6 @@
   - cereal is used to represent a corresponding serial port. Please change below if need be. 
 
 */
-#ifdef ARDUINO_AVR_MICRO
-#define cereal (Serial1)
-#endif
-
-#ifdef ARDUINO_AVR_MEGA2560
-#define cereal (Serial3)
-//#define samd21Port1Begin(a)
-#endif
-
-#ifdef ARDUINO_SAMD_ZERO
-#include <P1AM_Serial.h>
-#define cereal (Port1)
-#define samd21Port1Begin(a)  (PORT1_RS232_BEGIN(a))
-#endif
 
 class jbus
 {
@@ -69,23 +56,28 @@ class jbus
     void init(unsigned long buad); // must call in setup.
     /**
      * @brief This function polls the bus for messages. If there are no messages, it returns a null pointer. Check
-     * to see if there is a message with if(*p). If there is a message, *p is the address. You can check that address with
-     * the following: if ((*p & 0x7F) == slave_address). Next we can check to see if we need to resond: if ((*p >> 7) == 1)
+     * to see if there is a message with if(*p). If there is a message, *p is the address. You can check that address with     * 
      * @return pointer to the received message.
     */
     byte* poll(); // returns a pointer to the message. 
+    
     /**
-     * @brief This function sends a message to the bus. If requestData is true, the slave is required to respond. 
-     * If requestData is false, the slave is not required to respond. The message must be null terminated
+     * @brief This function sends a byte array
      * @param address The address of the slave
-     * @param requestData If true, the slave is required to respond
-     * @param msgArr The message to send must be null terminated
+     * @param msgArr The message to send must be null terminated. Can be either a byte array or a string to send
+     * @param arrLen The length of the message array. 
+     * remember, type name[] is the same as type *name
     */
-    // void send(byte address, byte msgArr[]); // this one is causing problems because I don't null terminate arrays
-    void send(byte address, byte msgArr[], int arrLen);
+    void send(byte address, uint8_t *msgArr, int arrLen); // pass in NULL TEMRINATED byte arrays
+
+    /**
+     * @brief This function sends a string
+     * @param address The address of the slave
+     * @param msgArr The message to send must be null terminated. Can be either a byte array or a string to send
+    */
+    void send(byte address, const char *msgArr); // pass in NULL TEMRINATED byte arrays
     void clearBuffer();
     
-
   private:
 
     byte _calcChecksum(byte *buffPtr, int packetLen); // returns the checksum

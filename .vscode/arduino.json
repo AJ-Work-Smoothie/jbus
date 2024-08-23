@@ -1,11 +1,5 @@
 {
     "port": "COM9",
     "board": "P1AM-100:samd:P1AM-100_native",
-    "buildPreferences": [
-        [
-            "build.extra_flags",
-            "-D__AVR_ATmega2560__"
-        ]
-    ],
     "sketch": "jbus.ino"
 }
