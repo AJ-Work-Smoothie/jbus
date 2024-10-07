@@ -68,7 +68,7 @@ class jbus
      * @param arrLen The length of the message array. 
      * remember, type name[] is the same as type *name
     */
-    void send(byte address, uint8_t *msgArr, int arrLen); // pass in NULL TEMRINATED byte arrays
+    void send(byte address, byte *msgArr, int arrLen); // pass in NULL TEMRINATED byte arrays
 
     /**
      * @brief This function sends a string

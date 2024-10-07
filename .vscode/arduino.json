@@ -1,12 +1,5 @@
 {
-    "port": "COM6",
-    "board": "arduino:avr:mega",
-    "sketch": "jbus.ino",
-    "configuration": "cpu=atmega2560",
-    "buildPreferences": [
-        [
-            "build.extra_flags",
-            "-D__AVR_ATmega2560__"
-        ]
-    ]
+    "port": "COM9",
+    "board": "P1AM-100:samd:P1AM-100_native",
+    "sketch": "jbus.ino"
 }

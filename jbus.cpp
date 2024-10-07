@@ -186,7 +186,7 @@ void jbus::send(byte address, const char *msgArr)
     }
 }
 
-void jbus::send(byte address, uint8_t *msgArr, int arrLen)
+void jbus::send(byte address, byte *msgArr, int arrLen)
 {
   int packetLen = 0;
    

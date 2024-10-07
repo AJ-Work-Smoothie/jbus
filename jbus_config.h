@@ -1,7 +1,6 @@
 #define JBUS_PORT   1
 #define JBUS_PROTOCOL  485
 
-
 #if !defined(JBUS_PORT)
   #error JBUS_PORT not defined - Set equal to 1 - 3
 #endif
