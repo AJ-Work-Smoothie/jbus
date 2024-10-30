@@ -11,7 +11,8 @@
   JBUS got revamped starting in 3/20/2024. The new version is called JBUS 2.0. 2.0 includes byte stuffing
   and address rejection. You can now use all bytes, 0x00 -> 0xFF without any issues.
 
-  Get started with JBUS by creating a jbus object:
+  To get started with JBUS:
+  Open up jbus_config.h and set your port and protocol at the very top of the file. Then, create an jbus object.
   jbus bus(). bus() is overloaded. If you are a master, do not pass any arguments. If you are a slave, pass
   in your address. By default, in slave configuration, poll() will reject any messages that are not addressed to the slave.
   If you wish to see all the messages in slave config, set it to true with object.rejectWrongAddress = true. 
@@ -60,7 +61,6 @@ class jbus
      * @return pointer to the received message.
     */
     byte* poll(); // returns a pointer to the message. 
-    
     /**
      * @brief This function sends a byte array
      * @param address The address of the slave
@@ -69,7 +69,6 @@ class jbus
      * remember, type name[] is the same as type *name
     */
     void send(byte address, byte *msgArr, int arrLen); // pass in NULL TEMRINATED byte arrays
-
     /**
      * @brief This function sends a string
      * @param address The address of the slave
