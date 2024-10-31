@@ -1,11 +1,7 @@
-#define JBUS_PORT   1
-#define JBUS_PROTOCOL  232
-
-#if !defined(JBUS_PORT)
-  #error JBUS_PORT not defined - Set equal to 1 - 3
-#endif
+// Make sure you define which port you are using for jbus. Their options are located under their specific board type.
 
 #if defined(ARDUINO_AVR_MICRO) || defined(ARDUINO_AVR_MEGA2560)
+  #define JBUS_PORT   3
   #define CEREAL_PORT_EXPAND(jbus_port) Serial##jbus_port
   #define CEREAL_PORT_WRAP(jbus_port) CEREAL_PORT_EXPAND(jbus_port)
   #define cereal CEREAL_PORT_WRAP(JBUS_PORT)
@@ -14,6 +10,8 @@
 #endif 
 
 #ifdef ARDUINO_SAMD_ZERO
+  #define JBUS_PORT   1
+  #define JBUS_PROTOCOL  232
   #include <P1AM_Serial.h>
   #if !defined(JBUS_PROTOCOL)
     #error JBUS_PROTOCOL not defined. Please set to Serial, 232, or 485
@@ -32,4 +30,9 @@
   // so let's make one more macro that's just cereal that a replacement for CEREAL_PORT(PORTNUM)
   #define cereal CEREAL_PORT(JBUS_PORT) // we need to us
 
-#endif  
+#endif 
+
+// in case I didnt' define the JBUS_PORT for either of the above
+#if !defined(JBUS_PORT)
+  #error JBUS_PORT not defined - Set equal to 1 - 3
+#endif
