@@ -2,13 +2,11 @@
 
 jbus::jbus()
 {
-  badMsgBytePtr = &badMsgByte; // set badMsg to point to badmsg, a byte equaling 0;
   rejectWrongAddress = false;
 }
 
 jbus::jbus(byte slaveAddress)
 {
-  badMsgBytePtr = &badMsgByte; // set badMsg to point to badmsg, a byte equaling 0;
   _slaveAddress = slaveAddress;
   rejectWrongAddress = true;
 }
@@ -86,9 +84,9 @@ byte* jbus::poll()
 
       byte tempCheckSum = _calcChecksum(packet, packetLen); // get the checksum
       // if the checksum fails
-      if (tempCheckSum != packet[packetLen - 2]) return badMsgBytePtr;
+      if (tempCheckSum != packet[packetLen - 2]) return nullptr;
       // if the address is incorrect and we are in reject mode, return
-      if (rejectWrongAddress && (packet[1] & 0x7F) != _slaveAddress) return badMsgBytePtr;
+      if (rejectWrongAddress && (packet[1] & 0x7F) != _slaveAddress) return nullptr;
 
       // byte unstuffing!
       int escapeChars = 0; // how many escape chars we have
@@ -125,7 +123,7 @@ byte* jbus::poll()
       return packet;
     }
   
-  return badMsgBytePtr;
+  return nullptr;
 
 }
 

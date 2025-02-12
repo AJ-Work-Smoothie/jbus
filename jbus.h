@@ -88,6 +88,4 @@ class jbus
     #define WRAPPER_COUNT   4
     
     byte _slaveAddress = 0;
-    byte badMsgByte = 0;
-    byte *badMsgBytePtr;
 };
