@@ -1,32 +1,39 @@
-#include <P1AM.h>
-#include "jbus.h"
-// master sketch
-jbus bus;
-byte arr[5] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE};
+#include <Arduino.h>
+#include "Jbus_3_0A.h"
+
+Jbus_3_0A devName;
+
 void setup()
 {
-  Serial.begin(115200);
-  bus.init(115200);
-  //bus.debugWrite = true;
-  
-  Serial.println(); Serial.println("Ready to go!"); Serial.println();
-
-  //while (!Serial);
+  devName.init(115200);
 }
-
 
 void loop()
-{
-  //bus.send(11, arr, sizeof(arr));
-
-  byte *p = bus.poll();
-  if (*p)
+{  
+  char commands[MAX_COMMANDS][MAX_CMD_LEN] = {0};       // 2D char array! 4 rows of 10 chars 
+  int commandCount = devName.poll(commands);
+  for (int i = 0; i < commandCount; i++) // only prints when commandCount is > than 0
     {
-      while (*p)
+      Serial.print("["); Serial.print(i); Serial.print("] = "); Serial.print(commands[i]); Serial.print("\t");
+      if (i + 1 == commandCount) 
         {
-          Serial.print(*p++, HEX);
-          Serial.print(" ");
+          Serial.println();
+          devName.send("ASA", "CMD1", "CMD2", nullptr);
         }
-      Serial.println();
     }
+
+  Serial.println("GOOOOOOOOOD!");
+
 }
+
+
+
+
+  // if (Serial.available())
+  //   {
+  //     char c = Serial.read();
+  //     switch(c)
+  //       {
+  //         case 'a': devName.send("Hipa", "World", "Beans", "Bark", nullptr); break;
+  //       }
+  //   }
