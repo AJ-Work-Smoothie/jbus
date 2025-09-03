@@ -1,15 +1,15 @@
-#include "Jbus_3_0A.h"
+#include "jbus_3_0A.h"
 
-Jbus_3_0A::Jbus_3_0A()
+jbus_3_0A::jbus_3_0A()
 {
   
 }
-void Jbus_3_0A::init(unsigned long baud)
+void jbus_3_0A::init(unsigned long baud)
 {
-  cereal.begin(115200);
+  cereal.begin(baud);
 }
 
-int Jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
+int jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
 {
   /**
    * We initialize buffIndex to 1. Why? Instead of using a flag to figure out if we've gotten a new start byte, we use SOM.
@@ -114,7 +114,7 @@ int Jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
   return commandCount;
 }
 
-void Jbus_3_0A::send(const char* first, ...)
+void jbus_3_0A::send(const char* first, ...)
 {
   static char callerStrings[MAX_ARR_SIZE] = {0}; // first start by filling with all 0s
   memset(callerStrings, 0, sizeof(callerStrings)); // since cs is static, we need to reset it everytime.
@@ -166,8 +166,8 @@ void Jbus_3_0A::send(const char* first, ...)
     }
 
   // let's actually send the darn packet!
-  //if (debug) { Serial.print("Final Packet: "); Serial.write(finalPacket, strlen(finalPacket)); }
-  Serial.write(finalPacket);
+  if (debug) { Serial.print("Final Packet: "); Serial.write(finalPacket, strlen(finalPacket));}
+  cereal.write(finalPacket);
   
 }
 

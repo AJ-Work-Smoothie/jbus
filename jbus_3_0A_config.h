@@ -4,15 +4,15 @@
 // ASA's default port is 3, so it does that. 
 #ifndef JBUS_PORT
   #if defined(ARDUINO_AVR_MEGA2560)
-    #error PLEASE DEFINE PORT 2(RS485) or PORT3 (RS232) for ASA BOARD
-  #elif defined(ARDUINO_AVR_MICRO) || defined(ARDUINO_SAMD_ZERO) || defined (ARDUINO_SAMD_ZERO)
+    #define JBUS_PORT 1   // generic fallback
+  #elif defined(ARDUINO_AVR_MICRO) || defined(ARDUINO_AVR_LEONARDO)
     #define JBUS_PORT 1
   #else
     #define JBUS_PORT 3   // generic fallback
   #endif
 #endif
 
-#if defined(ARDUINO_AVR_MICRO) || defined(ARDUINO_AVR_MEGA2560)
+#if defined(ARDUINO_AVR_MICRO) || defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_LEONARDO)
   #define CEREAL_PORT_EXPAND(jbus_port) Serial##jbus_port
   #define CEREAL_PORT_WRAP(jbus_port) CEREAL_PORT_EXPAND(jbus_port)
   #define cereal CEREAL_PORT_WRAP(JBUS_PORT)

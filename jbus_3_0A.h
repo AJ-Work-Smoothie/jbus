@@ -1,20 +1,20 @@
 #pragma once
 #include <Arduino.h>
 #include <stdarg.h>
-#include "jbus3_0A_config.h"
+#include "jbus_3_0A_config.h"
 
 #define MAX_COMMANDS    4
 #define MAX_CMD_LEN     10
 #define MAX_ARR_SIZE    64
 
 
-class Jbus_3_0A
+class jbus_3_0A
 {
   public:
     bool debug = true;
     
-    Jbus_3_0A();
-    void init(unsigned long baud); // must call in void setup
+    jbus_3_0A();
+    void init(unsigned long baud = 115200); // must call in void setup, defaults to 115200
 
     /**
      * @brief poll() grabs messages from the serial buffer. Will shove them into an array
@@ -36,8 +36,6 @@ class Jbus_3_0A
     const char JB_OPEN_CHAR = '{';
     const char JB_CLOSE_CHAR = '}';
     const char JB_ENDBYTE_CHAR = '\n';
-
-    
 
     //! jb OPEN IS NOT A KNOWN LOCATION
         // all of the jbust indexes
