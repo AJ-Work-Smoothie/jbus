@@ -4,9 +4,15 @@ jbus_3_0A::jbus_3_0A()
 {
   
 }
+
 void jbus_3_0A::init(unsigned long baud)
 {
   cereal.begin(baud);
+}
+
+void jbus_3_0A::rejectOtherSenders(const char* senderName)
+{
+  senderName_ = senderName;
 }
 
 int jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
@@ -69,6 +75,7 @@ int jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
     {
       Serial.println("There was a checksum mismatch :(");
       for (int i = 0; i < MAX_ARR_SIZE; i++) packet[i] = 0; // reset packet
+      // someimes gets in an endless checksum mistmatch loop, don't know why
       return false; // everything will reset itself
     }
   /**
@@ -111,6 +118,25 @@ int jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
         }
       else commandLen++; // if we didn't find | or }, then the current char is part of the len of the message
     }
+  
+  // Before we send it back, we need to see if we care about rejecting the wrong sender or not
+  // If sendername == nullptr, then we never enabled sender rejection. Simply return commandCount with all messages from whomever
+  if (senderName_ == nullptr) return commandCount;
+  // if senderName was != nullptr, then we must care about sender rejection. Check below
+  if (strcmp(msgs[0], senderName_) == 0) // if the names are correct
+    {
+      // if they match, then let's remove the sender name because we already know who it is
+      // let's shift everything we've saved so far back by 1, truncating the name
+      commandCount -= 1; // since we removed (are going to) an element from the array
+      for (int i = 0; i < commandCount; i++) strcpy(msgs[i], msgs[i + 1]);
+      msgs[commandCount][0] = '\0'; // clear the last slot because it's no longer used
+    }
+  else 
+    {
+      if (debug) Serial.println("The sender did not match who we are looking for");
+      return 0; 
+    }
+
   return commandCount;
 }
 

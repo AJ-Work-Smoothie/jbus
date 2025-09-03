@@ -29,6 +29,7 @@ The original version of Jbus for the Arduino used to send over raw bytes, and it
 - The start char is `~`
 - The sender includes a message length so receiver knows how many chars to expect
 - Each sender shall have its own name. This can be used for device addressing. If you are the master device, instead of using your name while sending, you can put in the name of the slave device you want to converse with.
+- You can reject messages from unkown/unlisted senders. If the sender name doesn't match who you specify, it will return nothing. If it does match, it will remove the name and return commands only. You can enable sender name rejectiong with `rejectOtherSenders("Safe Sender Name Here");`. This is handy because if you are only wanting messsages from 1 person, you already know who it is. So remove the pesky name so we can get right to the commands.
 - Messages/Commands are strings. Each new command will be prefixed with the `|` character. Message structure is completely up to you. You can send words, characters, numbers, etc. Examples are:
     - `A`
     - `1234`
@@ -99,6 +100,7 @@ void loop()
 2. In `jbus_3_0A_config.h` are the serial port options. I currently have the correct options selected for the ATMega2560, Micro, Leonoardo, and maybe the P1AM
 3. Create a Jbus object
     - `jbus_3_0A devName;`
+    - 
 4. Set the proper baud rate with `init()`. Must call in `void setup`
     - `devName.init(115200);`
 5. Create 4 arrays that each contain an array of 10 chars. If you make them temp variables, they get reset each loop so you don't have to yourself.

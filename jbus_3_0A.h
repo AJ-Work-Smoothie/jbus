@@ -15,7 +15,7 @@ class jbus_3_0A
     
     jbus_3_0A();
     void init(unsigned long baud = 115200); // must call in void setup, defaults to 115200
-
+    void rejectOtherSenders(const char * senderName); // use this if we want to reject other senders.
     /**
      * @brief poll() grabs messages from the serial buffer. Will shove them into an array
      * of c-style strings.
@@ -29,8 +29,11 @@ class jbus_3_0A
      *                followed by the commands. **FINAL ARGUMENT MUST BE nullptr!!!!**
      */
     void send(const char* first, ...); // we aren't sure how many messages are coming in, so we'll keep it variable with . . .
+    void clear(); // called when there is a checksum mistmatch
 
   private:
+    // if senderName_ is NOT equal to nullPtr, then we must care about who we are getting messages from
+    const char *senderName_ = nullptr; // will store the name of the sender we only want to messages from
     const char JB_STARTBYTE_CHAR = '~';
     const char JB_SEPARATOR_CHAR = '|';
     const char JB_OPEN_CHAR = '{';
