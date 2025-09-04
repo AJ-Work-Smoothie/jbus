@@ -15,6 +15,7 @@ The original version of Jbus for the Arduino used to send over raw bytes, and it
 
   > ~~TODO Merge all info from the .h into the readme~~
 
+//^ ~25|Alpha{Bravo|Charlie|Delta|Foxtrot}51
 
 # Jbus 3.0 Packet Overview:
 
@@ -29,14 +30,21 @@ The original version of Jbus for the Arduino used to send over raw bytes, and it
 - The start char is `~`
 - The sender includes a message length so receiver knows how many chars to expect
 - Each sender shall have its own name. This can be used for device addressing. If you are the master device, instead of using your name while sending, you can put in the name of the slave device you want to converse with.
-- You can reject messages from unkown/unlisted senders. If the sender name doesn't match who you specify, it will return nothing. If it does match, it will remove the name and return commands only. You can enable sender name rejectiong with `rejectOtherSenders("Safe Sender Name Here");`. This is handy because if you are only wanting messsages from 1 person, you already know who it is. So remove the pesky name so we can get right to the commands.
+- You can reject messages from unkown/unlisted senders. If the sender name doesn't match who you specify, it will return nothing. If it does match, it will remove the name and return commands only. You can enable sender name rejection with `rejectOtherSenders("Safe Sender Name Here");`. This is handy because if you are only wanting messsages from 1 person, you already know who it is. So remove the pesky name so we can get right to the commands.
+- A checksum will appeneded to each message. This checksum is a simple XOR checksum
+- All packets will be terminated with the `\n` newline character. 
 - Messages/Commands are strings. Each new command will be prefixed with the `|` character. Message structure is completely up to you. You can send words, characters, numbers, etc. Examples are:
     - `A`
     - `1234`
-    - `CONF:RES 10M`
+    - `MOVE:120`
     - `CMD1|CMD2|CMD3`
-- A checksum will appeneded to each message. This checksum is a simple XOR checksum
-- All packets will be terminated with the `\n` newline character. 
+- As stated above, you have the freedom to choose however your string format is, however I have chosen a default method of sending commands. You will find a function that will help you deal with them. For example take `MOVE:10`. 
+    - `MOVE:10` in its entirety is called a *command*
+    - `MOVE` is the *action*
+    - `:` is the *action/parameter separator*
+    - `10` is the *parameter*
+
+  Accompanying this format is a function called `parseCommand`. Pass in an ActionParameter struct, and `parseCommand` will split a singluar command into an action and a parameter and write those to the two strings inside of the struct.
 
 ### More details
 - Between the start character `~` and the first `|` is the message length. The message length counts the amount of bytes from the first length (index 1) byte through the end of the payload marker `}`. The message len is represented by two ASCII hex characters.
@@ -124,4 +132,3 @@ void loop()
 
 > The null pointer is very important, do not forget to put it at the end 
 > You are limited to 4 messages (including your name) and each much be shorter than 10 chars long
-
