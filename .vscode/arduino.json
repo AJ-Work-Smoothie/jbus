@@ -1,7 +1,7 @@
 {
     "port": "COM5",
     "board": "arduino:avr:mega",
-    "sketch": "jbus.ino",
+    "sketch": "Jbus.ino",
     "buildPreferences": [
         [
             "build.extra_flags",

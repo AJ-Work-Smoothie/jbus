@@ -1,17 +1,17 @@
-#include "jbus_3_0A.h"
+#include "Jbus_3_0A.h"
 
-jbus_3_0A::jbus_3_0A()
+Jbus_3_0A::Jbus_3_0A()
 {
   
 }
 
-void jbus_3_0A::init(unsigned long baud)  { cereal.begin(baud); }
-void jbus_3_0A::debugMode(bool flag) { debug_ = flag; }
-void jbus_3_0A::setMyName(const char* myName) { myName_ = myName; }
-void jbus_3_0A::rejectOtherSenders(const char* senderName)  { senderName_ = senderName; }
+void Jbus_3_0A::init(unsigned long baud)  { cereal.begin(baud); }
+void Jbus_3_0A::debugMode(bool flag) { debug_ = flag; }
+void Jbus_3_0A::setMyName(const char* myName) { myName_ = myName; }
+void Jbus_3_0A::rejectOtherSenders(const char* senderName)  { senderName_ = senderName; }
 
 
-int jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
+int Jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
 {
   /**
    * We initialize buffIndex to 1. Why? Instead of using a flag to figure out if we've gotten a new start byte, we use SOM.
@@ -137,7 +137,7 @@ int jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
   return commandCount;
 }
 
-void jbus_3_0A::send(const char* first, ...)
+void Jbus_3_0A::send(const char* first, ...)
 {
   static char callerStrings[MAX_ARR_SIZE] = {0}; // first start by filling with all 0s
   memset(callerStrings, 0, sizeof(callerStrings)); // since cs is static, we need to reset it everytime.
@@ -197,7 +197,7 @@ void jbus_3_0A::send(const char* first, ...)
   
 }
 
-void jbus_3_0A::parseCommand(const char *command, ActionParameter &ap)
+void Jbus_3_0A::parseCommand(const char *command, ActionParameter &ap)
 {
   size_t sep = strcspn(command, ":"); // first find the command, seping with :
   if (sep > strlen(command)) return; // if we found no :, then the input string was wrong. Return nothing

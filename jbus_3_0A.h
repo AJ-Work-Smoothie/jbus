@@ -1,9 +1,9 @@
 #pragma once
 #include <Arduino.h>
 #include <stdarg.h>
-#include "jbus_3_0A_config.h"
+#include "Jbus_3_0A_config.h"
 
-#define MAX_COMMANDS    7   // 7 * 32 = 224, must be < MAX_ARR_SIZE & save room for checksum etc
+#define MAX_COMMANDS    7
 #define MAX_CMD_LEN     32
 #define MAX_ARR_SIZE    256
 
@@ -13,11 +13,11 @@ struct ActionParameter {
 };
 
 
-class jbus_3_0A
+class Jbus_3_0A
 {
   public:
     
-    jbus_3_0A();
+    Jbus_3_0A();
     void init(unsigned long baud = 115200); // must call in void setup, defaults to 115200
     void debugMode(bool flag);
     void setMyName(const char * myName);

@@ -1,21 +1,10 @@
-# JBUS 3.0A!
+# JBUS 3.0A! - Ardiuno Version
 
-**The A in 3.0A means that this is for Arduino!**
+> TODO: This version of Jbus should be compatible with the RPI version, however the RPI version needs to be updated to match the new features of Jbus. 
+> TODO: In `Jbus_config.h` there is code to enable the RS485 on the P1AM. This has not been implemented. It's not that much work, but needs to be done and tested.
 
-### So this isnn't confusing at all. I've never used the RS485 branch. I'm creating this new branch, which is based off the work I did on the XT7 rotary table. I re-wrote JBUS so that it can work with the RPI. This version will be a continuation of that. 
-
-## What changed?
-The original version of Jbus for the Arduino used to send over raw bytes, and it used byte stuffing to negotiate problems. The newer jbus is an ASCI-only based protocol. You send strings back and forth. Sending numbers is very easy. The entire packet structure is broken down later in this readme. 
-
-  > TODO Add P1AM Support (whatever that means)
-
-  > TODO MERGE RS485 Support Branch with this branch
-
-  > ~~TODO Make a fucking readme~~
-
-  > ~~TODO Merge all info from the .h into the readme~~
-
-//^ ~25|Alpha{Bravo|Charlie|Delta|Foxtrot}51
+### What changed from Jbus 2 to Jbus 3?
+The original version of Jbus for the Arduino used to send over raw bytes, and it used byte stuffing. The newer jbus is an ASCII-only based protocol. You send strings back and forth. This was done because it was much easier to communicate with C++ using strings than raw bytes. It makes our lives a little bit harder on the Arduino, but not too bad at all!
 
 # Jbus 3.0 Packet Overview:
 
@@ -29,7 +18,7 @@ The original version of Jbus for the Arduino used to send over raw bytes, and it
 
 - The start char is `~`
 - The sender includes a message length so receiver knows how many chars to expect
-- Each sender shall have its own name. This can be used for device addressing. If you are the master device, instead of using your name while sending, you can put in the name of the slave device you want to converse with.
+- Every message is sent with a name in the name field. This can be configured to be your master's name, or you can put in a slave's name if you are speaking to multiple slaves. I left it flexible to suit different needs. However since Jbus has address rejection, it's ideal to use the Master's name.
 - You can reject messages from unkown/unlisted senders. If the sender name doesn't match who you specify, it will return nothing. If it does match, it will remove the name and return commands only. You can enable sender name rejection with `rejectOtherSenders("Safe Sender Name Here");`. This is handy because if you are only wanting messsages from 1 person, you already know who it is. So remove the pesky name so we can get right to the commands.
 - A checksum will appeneded to each message. This checksum is a simple XOR checksum
 - All packets will be terminated with the `\n` newline character. 
@@ -51,10 +40,12 @@ The original version of Jbus for the Arduino used to send over raw bytes, and it
 - Immediately following the `|` is the name of the sender. The sender name is the substring between the `|` and the open `{` character.
 - Payload appears between `{` and `}`. The `}` marks the end of the payload and the start of the checksum
 - The checksum is a XOR of all bytes from the first length byte (index 1) through the `}` character. The checksum result is represented as two ASCII hex characters (e.g., 0A, 1B, FF) and immediately follows the `}` with no delimiter.
-- Maximum packet size is 64 bytes
-- No individual command should exceed 10 bytes. If you absolutely must send the worlds largest barcode, then split up the message into separate command
+- Maximum packet size is 256 bytes
+- No individual command should exceed 32 chars. If you absolutely must send the worlds largest barcode, then split up the message into separate commands
+- Maxium number of commands per message is seven. 7 * 32 = 224, must be less than MAX_ARR_SIZE(256) & save room for the message wrapper.
+
 ### Packet Structure
-- [STARTi]  = `~`
+- [STARTi] = `~`
 - [LEN]    = 2-char hex indicating length from len to close
 - [SOM]    = Start of message, marked `|`
 - [SENDER] = variable string (no `{`, `|`, `}`, or `~`)
@@ -62,28 +53,26 @@ The original version of Jbus for the Arduino used to send over raw bytes, and it
 - [MSG]    = command string with commands separated by '|'
 - [CLOSE]  = `}`
 - [CHECK]  = 2-digit hex XOR of (LEN thru `}`)
-- [ENDi]    = `\n`
+- [ENDi]   = `\n`
 
 ### Example Messages
-- `~MSGLEN|SENDER{COMMANDS}CHECKSUM\n`
+- FORMAT: `~MSGLEN|SENDER{COMMANDS}CHECKSUM\n`
 - `~19|ASA{MOVE:10|EAT:PIZZA}45\n`
 - `~13|PILC{OPEN|CLOSE}50\n`
-
-# Jbus_A: The Arduino version
-Sady we no longer have access to cool things like strings and vectors, so we're gonna have to do some things the old school way.
+- `~25|Alpha{Bravo|Charlie|Delta:11|Foxtrot}51\n`
 
 ## Limitations
-Bye bye vectors, strings, and dynamic buffers. We now have to fix the length of certain things.
-> Message strings are now limited to 4 commands x 10 (4 messages of 10 chars each).
+For the Arduino version of this library, we have to say bye bye vectors, strings, and dynamic buffers. We now have to manually use c-style strings.
+> Message strings are now limited to 7 commands x 32 (7 messages of 32 chars each).
 
 ## Getting Messages
 
 Full code:
 ```cpp
 #include <Arduino.h>
-#include "jbus_3_0A.h"
+#include "Jbus_3_0A.h"
 
-jbus_3_0A devName;
+Jbus_3_0A devName;
 
 void setup()
 {
@@ -105,10 +94,9 @@ void loop()
 
 1. Include the Jbus_A header
     - `#include "Jbus_3_0A.h"`
-2. In `jbus_3_0A_config.h` are the serial port options. I currently have the correct options selected for the ATMega2560, Micro, Leonoardo, and maybe the P1AM
+2. In `Jbus_3_0A_config.h` are the serial port options. I currently have the correct options selected for the ATMega2560, Micro, Leonoardo, and maybe the P1AM
 3. Create a Jbus object
-    - `jbus_3_0A devName;`
-    - 
+    - `Jbus_3_0A devName;`
 4. Set the proper baud rate with `init()`. Must call in `void setup`
     - `devName.init(115200);`
 5. Create 4 arrays that each contain an array of 10 chars. If you make them temp variables, they get reset each loop so you don't have to yourself.
@@ -131,4 +119,4 @@ void loop()
 2. `devName.send("Hipa", "World", "Beans", "Bark", nullptr);`
 
 > The null pointer is very important, do not forget to put it at the end 
-> You are limited to 4 messages (including your name) and each much be shorter than 10 chars long
+> You are limited to 7 messages (including your name) and each much be shorter than 32 chars long

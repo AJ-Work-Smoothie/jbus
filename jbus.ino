@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "Jbus_3_0A.h"
 
-jbus_3_0A devName;
+Jbus_3_0A devName;
 
 void setup()
 {
