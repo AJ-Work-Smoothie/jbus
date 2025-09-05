@@ -2,6 +2,7 @@
 
 > TODO: This version of Jbus should be compatible with the RPI version, however the RPI version needs to be updated to match the new features of Jbus. 
 > TODO: In `Jbus_config.h` there is code to enable the RS485 on the P1AM. This has not been implemented. It's not that much work, but needs to be done and tested.
+> BUG?  We got a case where the name was too long. Why? The packet is already fine. Just reset and it worked fine ¯\_(ツ)_/¯ 
 
 ### What changed from Jbus 2 to Jbus 3?
 The original version of Jbus for the Arduino used to send over raw bytes, and it used byte stuffing. The newer jbus is an ASCII-only based protocol. You send strings back and forth. This was done because it was much easier to communicate with C++ using strings than raw bytes. It makes our lives a little bit harder on the Arduino, but not too bad at all!
