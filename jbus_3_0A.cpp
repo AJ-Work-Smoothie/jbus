@@ -145,24 +145,32 @@ void Jbus_3_0A::send(const char* first, ...)
 
   va_list args; // create an iterator called args that will be our list index
   va_start(args, first); // enables access to the variable list
-  int count = 0;
   const char *charListPtr = first; // asign a pointer to the first argument
 
   while (charListPtr != nullptr)
     {
       // if we've set myName & it's the first go, pop our name in first instead of the first argument. The first
       // argument will be a command and not a name since we've already provided jbus with a name.
-      if (charListPtr == first && myName_ != nullptr) strcat(callerStrings, myName_);
-      else strcat(callerStrings, charListPtr); // add argument char to callerStrings
-      if (charListPtr == first) strcat(callerStrings, "{"); // if it's the first time, put a { after the sender name. 
-      else strcat(callerStrings, "|"); // after that, these are commands that need a |
+      if (charListPtr == first && myName_ != nullptr) 
+        {
+          strcat(callerStrings, myName_);
+          strcat(callerStrings, "{");
+        }
+      else if (charListPtr == first)
+        {
+          strcat(callerStrings, charListPtr); // add argument char to callerStrings
+          strcat(callerStrings, "{");
+          charListPtr = va_arg(args, const char*); // points charListPtr to the next char arg in the list
+        }
+      strcat(callerStrings, charListPtr);
+      strcat(callerStrings, "|"); // after that, these are commands that need a |
       charListPtr = va_arg(args, const char*); // points charListPtr to the next char arg in the list
     }
   
   va_end(args); // very important to call this!! Ask Miranda if you don't know why
  
   int msgLen = strlen(callerStrings);
-  callerStrings[msgLen - 1] = JB_CLOSE_CHAR;
+  callerStrings[msgLen - 1] = JB_CLOSE_CHAR; // we cheat here and replace the last | with a }
   msgLen += 2; // gotta add the two len bytes
 
   // find len, do checksum, append, append \n, send!
@@ -192,7 +200,7 @@ void Jbus_3_0A::send(const char* first, ...)
     }
 
   // let's actually send the darn packet!
-  //if (debug_) { Serial.print("Final Packet: "); Serial.write(finalPacket, strlen(finalPacket));}
+  if (debug_) { Serial.print("Final Packet: "); Serial.write(finalPacket, strlen(finalPacket));}
   cereal.write(finalPacket);
   
 }
