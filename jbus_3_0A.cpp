@@ -9,7 +9,7 @@ void Jbus_3_0A::init(unsigned long baud)  { cereal.begin(baud); }
 void Jbus_3_0A::debugMode(int level) { debug_ = level; }
 void Jbus_3_0A::setMyName(const char* myName) 
 {  
-  size_t len = strnlen(myName, MAX_NAME_LEN);
+  size_t len = strnlen(myName, MAX_NAME_LEN - 1); // -1 to make sure we never land on 11
   memcpy(myName_, myName, MAX_NAME_LEN);
   myName_[len] = '\0'; // always null terminate strings!
 }
@@ -95,7 +95,7 @@ int Jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
   // if we aren't, then it needs to equal 1 because the first varg *is* the name
 
   for (int i = JB_SOM + 1; packet[i] != JB_OPEN_CHAR; i++) nameLen++; // Now let's find the length of the sender name
-  if (nameLen > MAX_CMD_LEN) { Serial.println("NAME IS TOO LONG"); return 0; }
+  if (nameLen > MAX_NAME_LEN) { Serial.println("NAME IS TOO LONG"); return 0; }
   strncpy(name, &packet[JB_SOM + 1], nameLen); // copy out the name
   name[nameLen] = '\0'; // VERY important null term the string
   // if we specified rejectOtherSenders, then we can skip saving the name to msgs (make sure commandCount goes to 0)

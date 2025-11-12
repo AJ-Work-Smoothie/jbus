@@ -17,7 +17,7 @@ void setup()
 
 void loop()
 {  
-  devName.send("CHECK:12345678");
+  devName.send("CHECK:12345678", nullptr);
   // char static commands[MAX_COMMANDS][MAX_CMD_LEN] = {0};       // 2D char array! 4 rows of 10 chars 
   // int commandCount = devName.poll(commands);
   // for (int i = 0; i < commandCount; i++) // only prints when commandCount is > than 0
