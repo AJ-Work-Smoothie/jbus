@@ -6,9 +6,19 @@ Jbus_3_0A::Jbus_3_0A()
 }
 
 void Jbus_3_0A::init(unsigned long baud)  { cereal.begin(baud); }
-void Jbus_3_0A::debugMode(bool flag) { debug_ = flag; }
-void Jbus_3_0A::setMyName(const char* myName) { myName_ = myName; }
-void Jbus_3_0A::rejectOtherSenders(const char* senderName)  { senderName_ = senderName; }
+void Jbus_3_0A::debugMode(int level) { debug_ = level; }
+void Jbus_3_0A::setMyName(const char* myName) 
+{  
+  size_t len = strnlen(myName, MAX_NAME_LEN);
+  memcpy(myName_, myName, MAX_NAME_LEN);
+  myName_[len] = '\0'; // always null terminate strings!
+}
+void Jbus_3_0A::rejectOtherSenders(const char* senderName)  
+{ 
+  size_t len = strnlen(senderName, MAX_NAME_LEN);
+  memcpy(senderName_, senderName, MAX_NAME_LEN);
+  senderName_[len] = '\0'; // always null terminate strings!
+}
 
 
 int Jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
@@ -19,7 +29,7 @@ int Jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
    * we haven't gotten a start flag. We also have to start buffIndex at 1 so that we don't put our start byte in index 0, making 
    * SOM 0, meaning we'll miss that start byte. We must reset buffIndex to 1 instead of 0.
   */
-  static char buffIndex = 1;
+  static int buffIndex = 1;
   static char rawBuffer[MAX_ARR_SIZE];
   static char packet[MAX_ARR_SIZE];
 
@@ -27,7 +37,7 @@ int Jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
     {
       if (buffIndex >= 255) buffIndex = 1; // constrain
       rawBuffer[buffIndex] = cereal.read();
-      //if (debug_) Serial.print((char)rawBuffer[buffIndex]);  // print the byte that was just read
+      if (debug_ == DB_RAW) Serial.print((char)rawBuffer[buffIndex]);  // print the byte that was just read
       if (rawBuffer[buffIndex] == '\n') break; // if we found an EOF, we should have a parsable message
       buffIndex++;
     }
@@ -61,7 +71,7 @@ int Jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
   uint8_t calcChecksum = 0, receivedChecksum = 0;
   for (size_t i = JB_LEN1; i <= msgLen; i++) calcChecksum ^= packet[i]; // calculate our own checksum
   char checksumChar[3];
-  checksumChar[0] = packet[msgLen + jb_CHECK1]; checksumChar[1] = packet[msgLen + jb_CHECK2]; checksumChar[3] = '\0'; // make sure to null-terminate your strings!
+  checksumChar[0] = packet[msgLen + jb_CHECK1]; checksumChar[1] = packet[msgLen + jb_CHECK2]; checksumChar[2] = '\0'; // make sure to null-terminate your strings!
   receivedChecksum = strtol(checksumChar, nullptr, 16); // getting the checksum from the message
   // if (debug_) 
   //   { 
@@ -80,16 +90,16 @@ int Jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
   if (debug_) { Serial.print("Assembled Message: "); Serial.print(packet); }
 
   int nameLen = 0;
-  char name[MAX_CMD_LEN];
+  char name[MAX_NAME_LEN];
   int commandCount; // seems misplaced, but we need to set it equal to 0 if we are rejectingOtherSenders
   // if we aren't, then it needs to equal 1 because the first varg *is* the name
 
   for (int i = JB_SOM + 1; packet[i] != JB_OPEN_CHAR; i++) nameLen++; // Now let's find the length of the sender name
-  if (strlen(name) > MAX_CMD_LEN) { Serial.println("NAME IS TOO LONG"); return 0; }
+  if (nameLen > MAX_CMD_LEN) { Serial.println("NAME IS TOO LONG"); return 0; }
   strncpy(name, &packet[JB_SOM + 1], nameLen); // copy out the name
   name[nameLen] = '\0'; // VERY important null term the string
   // if we specified rejectOtherSenders, then we can skip saving the name to msgs (make sure commandCount goes to 0)
-  if (senderName_ != nullptr) 
+  if (senderName_[0] != '\0') 
     {
       // if the sender name is NOT equal to the incoming name, do nothing and return.
       if (strcmp(name, senderName_)) { Serial.println("REJECTING SENDER!"); return 0; }
@@ -151,7 +161,7 @@ void Jbus_3_0A::send(const char* first, ...)
     {
       // if we've set myName & it's the first go, pop our name in first instead of the first argument. The first
       // argument will be a command and not a name since we've already provided jbus with a name.
-      if (charListPtr == first && myName_ != nullptr) 
+      if (charListPtr == first && myName_[0] != '\0') 
         {
           strcat(callerStrings, myName_);
           strcat(callerStrings, "{");
@@ -200,13 +210,18 @@ void Jbus_3_0A::send(const char* first, ...)
     }
 
   // let's actually send the darn packet!
-  if (debug_) { Serial.print("Final Packet: "); Serial.write(finalPacket, strlen(finalPacket));}
+  if (debug_) { Serial.print("Final Outgoing Packet: "); Serial.write(finalPacket, strlen(finalPacket));}
   cereal.write(finalPacket);
   
 }
 
 void Jbus_3_0A::parseCommand(const char *command, ActionParameter &ap)
 {
+
+  // Always clear the anything out of ActionParameter
+  memset(ap.action, 0, sizeof(ap.action));
+  memset(ap.parameter, 0, sizeof(ap.parameter));
+
   size_t sep = strcspn(command, ":"); // first find the command, seping with :
   if (sep > strlen(command)) return; // if we found no :, then the input string was wrong. Return nothing
   for (size_t i = 0; i < sep; i++) ap.action[i] = command[i];

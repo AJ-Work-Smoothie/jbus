@@ -34,16 +34,18 @@ The original version of Jbus for the Arduino used to send over raw bytes, and it
     - `:` is the *action/parameter separator*
     - `10` is the *parameter*
 
-  Accompanying this format is a function called `parseCommand`. Pass in an ActionParameter struct, and `parseCommand` will split a singluar command into an action and a parameter and write those to the two strings inside of the struct.
+  Accompanying this format is a function called `parseCommand`. Pass in an ActionParameter struct, and `parseCommand` will split a singluar command into an action and a parameter and write those to the two strings inside of the struct. Parse command always erases the ActionParameter struct each call.
 
 ### More details
+- Make sure to check the different buffer sizes. Names can be no longer than 10 chars.
 - Between the start character `~` and the first `|` is the message length. The message length counts the amount of bytes from the first length (index 1) byte through the end of the payload marker `}`. The message len is represented by two ASCII hex characters.
 - Immediately following the `|` is the name of the sender. The sender name is the substring between the `|` and the open `{` character.
 - Payload appears between `{` and `}`. The `}` marks the end of the payload and the start of the checksum
 - The checksum is a XOR of all bytes from the first length byte (index 1) through the `}` character. The checksum result is represented as two ASCII hex characters (e.g., 0A, 1B, FF) and immediately follows the `}` with no delimiter.
 - Maximum packet size is 256 bytes
 - No individual command should exceed 32 chars. If you absolutely must send the worlds largest barcode, then split up the message into separate commands
-- Maxium number of commands per message is seven. 7 * 32 = 224, must be less than MAX_ARR_SIZE(256) & save room for the message wrapper.
+- Maxium number of commands per message is seven. 7 * 32 = 224, must be less than MAX_ARR_SIZE(256) & save room for the message wrapper
+- When calling `send(. . .)` you must *ALWAYS* put `nullptr` as your last argument. If you don't, the program will crash!
 
 ### Packet Structure
 - [STARTi] = `~`
@@ -119,5 +121,5 @@ void loop()
 1. Follow steps 1 - 4 above
 2. `devName.send("Hipa", "World", "Beans", "Bark", nullptr);`
 
-> The null pointer is very important, do not forget to put it at the end 
+> The null pointer is very important, do not forget to put it at the end. If you entire board crashes, it's most likely because you did not put a nullptr at the end of a send!
 > You are limited to 7 messages (including your name) and each much be shorter than 32 chars long
