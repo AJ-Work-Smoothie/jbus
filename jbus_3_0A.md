@@ -1,5 +1,5 @@
 # JBUS 3.0A! - Ardiuno Version
-
+s
 > TODO: This version of Jbus should be compatible with the RPI version, however the RPI version needs to be updated to match the new features of Jbus. 
 > TODO: In `Jbus_config.h` there is code to enable the RS485 on the P1AM. This has not been implemented. It's not that much work, but needs to be done and tested.
 > BUG?  We got a case where the name was too long. Why? The packet is already fine. Just reset and it worked fine ¯\_(ツ)_/¯ 
