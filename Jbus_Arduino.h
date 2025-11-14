@@ -7,8 +7,8 @@
 #define MAX_NAME_LEN    10
 #define MAX_CMD_LEN     32
 #define MAX_ARR_SIZE    256
-#define DB_RAW          1
-#define DB_PACKET       2
+#define DEBUG_RAW       1
+#define DEBUG_PACKET    2
 
 struct ActionParameter {
   char action[MAX_CMD_LEN];
@@ -24,7 +24,7 @@ class Jbus
     void init(unsigned long baud = 115200); // must call in void setup, defaults to 115200
     void debugMode(int level); // 0 = none, 1 = raw messages, 2 = layers
     void setMyName(const char * myName);
-    void rejectOtherSenders(const char * senderName); // use this if we want to reject other senders.
+    void rejectOtherNames(const char * safeName); // use this if we want to reject other senders.
     
     /**
      * @brief poll() grabs messages from the serial buffer. Will shove them into an array of c-style strings.
@@ -51,7 +51,7 @@ class Jbus
   private:
     int debug_ = 0;
     char myName_[MAX_NAME_LEN] = {0};      // we need to make sure we allocate space for this
-    char senderName_[MAX_NAME_LEN] = {0};  // will store the name of the sender we only want to messages from
+    char safeName_[MAX_NAME_LEN] = {0};  // will store the name of the sender we only want to messages from
     const char JB_STARTBYTE_CHAR = '~';
     const char JB_SEPARATOR_CHAR = '|';
     const char JB_PARAMETER_IND = ':';

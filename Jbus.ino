@@ -8,9 +8,9 @@ char commands[MAX_COMMANDS][MAX_CMD_LEN] = {0};       // 2D char array! 4 rows o
 void setup()
 {
   Serial.begin(115200);
-  devName.init(9600);
+  devName.init(115200);
 
-  devName.debugMode(DB_RAW);
+  devName.debugMode(DEBUG_PACKET);
   devName.setMyName("ASA");
 
 }

@@ -13,11 +13,11 @@ void Jbus::setMyName(const char* myName)
   memcpy(myName_, myName, MAX_NAME_LEN);
   myName_[len] = '\0'; // always null terminate strings!
 }
-void Jbus::rejectOtherSenders(const char* senderName)  
+void Jbus::rejectOtherNames(const char* safeName)  
 { 
-  size_t len = strnlen(senderName, MAX_NAME_LEN);
-  memcpy(senderName_, senderName, MAX_NAME_LEN);
-  senderName_[len] = '\0'; // always null terminate strings!
+  size_t len = strnlen(safeName, MAX_NAME_LEN);
+  memcpy(safeName_, safeName, MAX_NAME_LEN);
+  safeName_[len] = '\0'; // always null terminate strings!
 }
 
 
@@ -37,7 +37,7 @@ int Jbus::poll(char msgs[][MAX_CMD_LEN])
     {
       if (buffIndex >= 255) buffIndex = 1; // constrain
       rawBuffer[buffIndex] = cereal.read();
-      if (debug_ == DB_RAW) Serial.print((char)rawBuffer[buffIndex]);  // print the byte that was just read
+      if (debug_ == DEBUG_RAW) Serial.print((char)rawBuffer[buffIndex]);  // print the byte that was just read
       if (rawBuffer[buffIndex] == '\n') break; // if we found an EOF, we should have a parsable message
       buffIndex++;
     }
@@ -99,10 +99,14 @@ int Jbus::poll(char msgs[][MAX_CMD_LEN])
   strncpy(name, &packet[JB_SOM + 1], nameLen); // copy out the name
   name[nameLen] = '\0'; // VERY important null term the string
   // if we specified rejectOtherSenders, then we can skip saving the name to msgs (make sure commandCount goes to 0)
-  if (senderName_[0] != '\0') 
+  if (safeName_[0] != '\0') 
     {
       // if the sender name is NOT equal to the incoming name, do nothing and return.
-      if (strcmp(name, senderName_)) { Serial.println("REJECTING SENDER!"); return 0; }
+      if (strcmp(name, safeName_)) 
+        { 
+          if (debug_) Serial.println("REJECTING SENDER!"); // if any debug mode is on
+          return 0;
+        }
       // if it's correct, we can just set cmd count to 0 and proceed with the rest of the message parsing
       commandCount = 0;
     }
