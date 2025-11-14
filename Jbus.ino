@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include "Jbus_3_0A.h"
+#include "Jbus_Arduino.h"
 
-Jbus_3_0A devName;
+Jbus devName;
 ActionParameter ap;
 char commands[MAX_COMMANDS][MAX_CMD_LEN] = {0};       // 2D char array! 4 rows of 10 chars
 

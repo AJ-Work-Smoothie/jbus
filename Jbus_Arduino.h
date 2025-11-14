@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include <stdarg.h>
-#include "Jbus_3_0A_config.h"
+#include "Jbus_Arduino_config.h"
 
 #define MAX_COMMANDS    7
 #define MAX_NAME_LEN    10
@@ -16,11 +16,11 @@ struct ActionParameter {
 };
 
 
-class Jbus_3_0A
+class Jbus
 {
   public:
     
-    Jbus_3_0A();
+    Jbus();
     void init(unsigned long baud = 115200); // must call in void setup, defaults to 115200
     void debugMode(int level); // 0 = none, 1 = raw messages, 2 = layers
     void setMyName(const char * myName);

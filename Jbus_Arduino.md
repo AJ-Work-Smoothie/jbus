@@ -1,8 +1,11 @@
-# JBUS 3.0A! - Ardiuno Version
-s
+# JBUS 3.0 Ardiuno Version
+
 > TODO: This version of Jbus should be compatible with the RPI version, however the RPI version needs to be updated to match the new features of Jbus. 
 > TODO: In `Jbus_config.h` there is code to enable the RS485 on the P1AM. This has not been implemented. It's not that much work, but needs to be done and tested.
 > BUG?  We got a case where the name was too long. Why? The packet is already fine. Just reset and it worked fine ¯\_(ツ)_/¯ 
+
+> Latestes updates:
+We deleted the branch JBUS 3.0A. We changed all the files names to Jbus_Arduino. No longer any version names in the files. 
 
 ### What changed from Jbus 2 to Jbus 3?
 The original version of Jbus for the Arduino used to send over raw bytes, and it used byte stuffing. The newer jbus is an ASCII-only based protocol. You send strings back and forth. This was done because it was much easier to communicate with C++ using strings than raw bytes. It makes our lives a little bit harder on the Arduino, but not too bad at all!
@@ -73,9 +76,9 @@ For the Arduino version of this library, we have to say bye bye vectors, strings
 Full code:
 ```cpp
 #include <Arduino.h>
-#include "Jbus_3_0A.h"
+#include "Jbus.h"
 
-Jbus_3_0A devName;
+Jbus devName;
 
 void setup()
 {
@@ -96,10 +99,10 @@ void loop()
 ```
 
 1. Include the Jbus_A header
-    - `#include "Jbus_3_0A.h"`
-2. In `Jbus_3_0A_config.h` are the serial port options. I currently have the correct options selected for the ATMega2560, Micro, Leonoardo, and maybe the P1AM
+    - `#include "Jbus.h"`
+2. In `Jbus_config.h` are the serial port options. I currently have the correct options selected for the ATMega2560, Micro, Leonoardo, and maybe the P1AM
 3. Create a Jbus object
-    - `Jbus_3_0A devName;`
+    - `Jbus devName;`
 4. Set the proper baud rate with `init()`. Must call in `void setup`
     - `devName.init(115200);`
 5. Create 4 arrays that each contain an array of 10 chars. If you make them temp variables, they get reset each loop so you don't have to yourself.

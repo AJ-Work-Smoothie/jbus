@@ -1,19 +1,19 @@
-#include "Jbus_3_0A.h"
+#include "Jbus_Arduino.h"
 
-Jbus_3_0A::Jbus_3_0A()
+Jbus::Jbus()
 {
   
 }
 
-void Jbus_3_0A::init(unsigned long baud)  { cereal.begin(baud); }
-void Jbus_3_0A::debugMode(int level) { debug_ = level; }
-void Jbus_3_0A::setMyName(const char* myName) 
+void Jbus::init(unsigned long baud)  { cereal.begin(baud); }
+void Jbus::debugMode(int level) { debug_ = level; }
+void Jbus::setMyName(const char* myName) 
 {  
   size_t len = strnlen(myName, MAX_NAME_LEN - 1); // -1 to make sure we never land on 11
   memcpy(myName_, myName, MAX_NAME_LEN);
   myName_[len] = '\0'; // always null terminate strings!
 }
-void Jbus_3_0A::rejectOtherSenders(const char* senderName)  
+void Jbus::rejectOtherSenders(const char* senderName)  
 { 
   size_t len = strnlen(senderName, MAX_NAME_LEN);
   memcpy(senderName_, senderName, MAX_NAME_LEN);
@@ -21,7 +21,7 @@ void Jbus_3_0A::rejectOtherSenders(const char* senderName)
 }
 
 
-int Jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
+int Jbus::poll(char msgs[][MAX_CMD_LEN])
 {
   /**
    * We initialize buffIndex to 1. Why? Instead of using a flag to figure out if we've gotten a new start byte, we use SOM.
@@ -147,7 +147,7 @@ int Jbus_3_0A::poll(char msgs[][MAX_CMD_LEN])
   return commandCount;
 }
 
-void Jbus_3_0A::send(const char* first, ...)
+void Jbus::send(const char* first, ...)
 {
   static char callerStrings[MAX_ARR_SIZE] = {0}; // first start by filling with all 0s
   memset(callerStrings, 0, sizeof(callerStrings)); // since cs is static, we need to reset it everytime.
@@ -215,7 +215,7 @@ void Jbus_3_0A::send(const char* first, ...)
   
 }
 
-void Jbus_3_0A::parseCommand(const char *command, ActionParameter &ap)
+void Jbus::parseCommand(const char *command, ActionParameter &ap)
 {
 
   // Always clear the anything out of ActionParameter
