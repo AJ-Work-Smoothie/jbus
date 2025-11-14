@@ -87,7 +87,7 @@ void setup()
 
 void loop()
 {  
-  char static commands[MAX_COMMANDS][MAX_CMD_LEN] = {0};       // 2D char array! 4 rows of 10 chars 
+  char static commands[MAX_COMMANDS][MAX_CMD_LEN] = {0};       // 2D char array! 4 rows of 10 chars. NO reason to be static
   int commandCount = devName.poll(commands);
   for (int i = 0; i < commandCount; i++) // only prints when commandCount is > than 0
     {
@@ -105,7 +105,7 @@ void loop()
     - `Jbus devName;`
 4. Set the proper baud rate with `init()`. Must call in `void setup`
     - `devName.init(115200);`
-5. Create 4 arrays that each contain an array of 10 chars. If you make them temp variables, they get reset each loop so you don't have to yourself.
+5. Create 4 arrays that each contain an array of 10 chars. If you make them temp variables, they get reset each loop so you don't have to yourself, so feel free to make them static.
     - `char commands[MAX_COMMANDS][MAX_CMD_LEN];`
 6. Create an integer to hold the command count returned by poll()
     - `int commandCount = 0;` Make this local
