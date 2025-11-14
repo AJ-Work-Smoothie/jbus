@@ -22,7 +22,7 @@ The original version of Jbus for the Arduino used to send over raw bytes, and it
 
 - The start char is `~`
 - The sender includes a message length so receiver knows how many chars to expect
-- Every message is sent with a name in the name field. This can be configured to be your master's name, or you can put in a slave's name if you are speaking to multiple slaves. I left it flexible to suit different needs. However since Jbus has address rejection, it's ideal to use the Master's name.
+- Every message is sent with a name in the name field. This can be configured to be your master's name, or you can put in a slave's name if you are speaking to multiple slaves. I left it flexible to suit different needs. 
 - You can reject messages from unkown names. If the name field in an incoming messages doesn't match a specified name, it will return nothing and you won't receive the message. If it does match, it will remove the name and return commands only. You can enable name rejection with `rejectOtherNames("Safe Name Here");`. This way if you have a master device, the master device can send messages with different slave names for different slaves. If the sent slave name doesn't match a particular slave's name, that particular slave can ignore the message. 
 - A checksum will appeneded to each message. This checksum is a simple XOR checksum
 - All packets will be terminated with the `\n` newline character. 
@@ -123,6 +123,7 @@ void loop()
 ## Sending Messages
 1. Follow steps 1 - 4 above
 2. `devName.send("Hipa", "World", "Beans", "Bark", nullptr);`
+- The first argument will be the sender/slave name. If you used `setMyName`, then the library will automatically send your name as the first argument, and you can put in just the commands. 
 
 > The null pointer is very important, do not forget to put it at the end. If you entire board crashes, it's most likely because you did not put a nullptr at the end of a send!
 > You are limited to 7 messages (including your name) and each much be shorter than 32 chars long

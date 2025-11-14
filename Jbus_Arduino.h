@@ -23,7 +23,7 @@ class Jbus
     Jbus();
     void init(unsigned long baud = 115200); // must call in void setup, defaults to 115200
     void debugMode(int level); // 0 = none, 1 = raw messages, 2 = layers
-    void setMyName(const char * myName);
+    void setMyName(const char * myName); // calling this automatically prepends myName to any messages sent out
     void rejectOtherNames(const char * safeName); // use this if we want to reject other senders.
     
     /**
