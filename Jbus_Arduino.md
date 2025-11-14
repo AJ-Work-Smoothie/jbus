@@ -76,7 +76,7 @@ For the Arduino version of this library, we have to say bye bye vectors, strings
 Full code:
 ```cpp
 #include <Arduino.h>
-#include "Jbus.h"
+#include "Jbus_Arduino.h"
 
 Jbus devName;
 
@@ -99,8 +99,8 @@ void loop()
 ```
 
 1. Include the Jbus_A header
-    - `#include "Jbus.h"`
-2. In `Jbus_config.h` are the serial port options. I currently have the correct options selected for the ATMega2560, Micro, Leonoardo, and maybe the P1AM
+    - `#include "Jbus_Arduino.h"`
+2. In `Jbus_Arduino_config.h` are the serial port options. I currently have the correct options selected for the ATMega2560, Micro, Leonoardo, and maybe the P1AM
 3. Create a Jbus object
     - `Jbus devName;`
 4. Set the proper baud rate with `init()`. Must call in `void setup`
