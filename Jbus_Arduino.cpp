@@ -87,7 +87,7 @@ int Jbus::poll(char msgs[][MAX_CMD_LEN])
     }
 
   // The message is now good.
-  if (debug_) { Serial.print("Assembled Message: "); Serial.print(packet); }
+  if (debug_) { Serial.print("Incoming Message: "); Serial.print(packet); }
 
   int nameLen = 0;
   char name[MAX_NAME_LEN];
@@ -214,7 +214,7 @@ void Jbus::send(const char* first, ...)
     }
 
   // let's actually send the darn packet!
-  if (debug_) { Serial.print("Final Outgoing Packet: "); Serial.write(finalPacket, strlen(finalPacket));}
+  if (debug_) { Serial.print("Outgoing Packet: "); Serial.write(finalPacket, strlen(finalPacket));}
   cereal.write(finalPacket);
   
 }
