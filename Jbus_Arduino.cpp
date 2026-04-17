@@ -35,7 +35,7 @@ int Jbus::poll(char msgs[][MAX_CMD_LEN])
 
   while (cereal.available() > 0)
     {
-      if (buffIndex >= 255) buffIndex = 1; // constrain
+      if (buffIndex >= MAX_ARR_SIZE - 1) buffIndex = 1; // constrain
       rawBuffer[buffIndex] = cereal.read();
       if (debug_ == DEBUG_RAW) Serial.print((char)rawBuffer[buffIndex]);  // print the byte that was just read
       if (rawBuffer[buffIndex] == '\n') break; // if we found an EOF, we should have a parsable message
@@ -62,6 +62,11 @@ int Jbus::poll(char msgs[][MAX_CMD_LEN])
   int msgLen = strtol(lenHexChar, nullptr, 16); // convert chars to their actual hex value
   //if (debug_) Serial.print("Msg Len: "); Serial.print(msgLen); Serial.println();
   //if (debug_) Serial.print("Char @ "); Serial.println((char)packet[msgLen]);
+  if (msgLen <= 0 || msgLen >= MAX_ARR_SIZE)
+    {
+      Serial.println("Message length is outside the allowed packet size");
+      return false;
+    }
   if (packet[msgLen] != JB_CLOSE_CHAR) 
     { 
       Serial.println("Message Length is too wrong, too long, or can't find the }");
@@ -95,7 +100,7 @@ int Jbus::poll(char msgs[][MAX_CMD_LEN])
   // if we aren't, then it needs to equal 1 because the first varg *is* the name
 
   for (int i = JB_SOM + 1; packet[i] != JB_OPEN_CHAR; i++) nameLen++; // Now let's find the length of the sender name
-  if (nameLen > MAX_NAME_LEN) { Serial.println("NAME IS TOO LONG"); return 0; }
+  if (nameLen >= MAX_NAME_LEN) { Serial.println("NAME IS TOO LONG"); return 0; }
   strncpy(name, &packet[JB_SOM + 1], nameLen); // copy out the name
   name[nameLen] = '\0'; // VERY important null term the string
   // if we specified rejectOtherSenders, then we can skip saving the name to msgs (make sure commandCount goes to 0)
@@ -137,6 +142,16 @@ int Jbus::poll(char msgs[][MAX_CMD_LEN])
     {
       if (packet[i] == JB_SEPARATOR_CHAR || packet[i] == JB_CLOSE_CHAR)
         {
+          if (commandCount >= MAX_COMMANDS)
+            {
+              Serial.println("Too many commands in packet");
+              return 0;
+            }
+          if (commandLen >= MAX_CMD_LEN)
+            {
+              Serial.println("Incoming command is too long");
+              return 0;
+            }
           //Serial.print("M: "); Serial.write(&packet[start], commandLen); Serial.println(); 
           strncpy(msgs[commandCount], &packet[start], commandLen);
           msgs[commandCount][commandLen] = '\0'; // we always have to null-terminate our strings!!!
@@ -160,6 +175,7 @@ void Jbus::send(const char* first, ...)
   va_list args; // create an iterator called args that will be our list index
   va_start(args, first); // enables access to the variable list
   const char *charListPtr = first; // asign a pointer to the first argument
+  int payloadCommandCount = 0;
 
   while (charListPtr != nullptr)
     {
@@ -172,12 +188,32 @@ void Jbus::send(const char* first, ...)
         }
       else if (charListPtr == first)
         {
+          if (strnlen(charListPtr, MAX_NAME_LEN) >= MAX_NAME_LEN)
+            {
+              Serial.println("Jbus::send() -> Sender name is too long");
+              va_end(args);
+              return;
+            }
           strcat(callerStrings, charListPtr); // add argument char to callerStrings
           strcat(callerStrings, "{");
           charListPtr = va_arg(args, const char*); // points charListPtr to the next char arg in the list
         }
+      if (charListPtr == nullptr) break;
+      if (payloadCommandCount >= MAX_PAYLOAD_COMMANDS)
+        {
+          Serial.println("Jbus::send() -> Too many commands for one packet");
+          va_end(args);
+          return;
+        }
+      if (strnlen(charListPtr, MAX_CMD_LEN) >= MAX_CMD_LEN)
+        {
+          Serial.println("Jbus::send() -> A command is too long");
+          va_end(args);
+          return;
+        }
       strcat(callerStrings, charListPtr);
       strcat(callerStrings, "|"); // after that, these are commands that need a |
+      payloadCommandCount++;
       charListPtr = va_arg(args, const char*); // points charListPtr to the next char arg in the list
     }
   
@@ -207,9 +243,9 @@ void Jbus::send(const char* first, ...)
   strcat(finalPacket, checksumChars);
   strcat(finalPacket, "\n");
 
-  if (strlen(finalPacket) > MAX_ARR_SIZE)
+  if (strlen(finalPacket) >= MAX_ARR_SIZE)
     {
-      Serial.println("Yo, you're trying to send too much data. Rethink your message");
+      Serial.println("Jbus::send() -> Yo, you're trying to send too much data. Rethink your message");
       return;
     }
 
@@ -234,5 +270,5 @@ void Jbus::parseCommand(const char *command, ActionParameter &ap)
   if (end > strlen(command)) return; // if we found no | or }, then the input string was wrong. Return nothing
   size_t start = sep + 1;
   for (size_t i = start; i < end; i++) ap.parameter[i - start] = command[i];
-  ap.parameter[end - sep] = '\0';
+  ap.parameter[end - start] = '\0';
 }

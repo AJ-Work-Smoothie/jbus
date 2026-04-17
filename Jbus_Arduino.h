@@ -3,10 +3,11 @@
 #include <stdarg.h>
 #include "Jbus_Arduino_config.h"
 
-#define MAX_COMMANDS    7
+#define MAX_COMMANDS    4
+#define MAX_PAYLOAD_COMMANDS (MAX_COMMANDS - 1)
 #define MAX_NAME_LEN    10
 #define MAX_CMD_LEN     32
-#define MAX_ARR_SIZE    256
+#define MAX_ARR_SIZE    128
 #define DEBUG_RAW       1
 #define DEBUG_PACKET    2
 
@@ -28,15 +29,17 @@ class Jbus
     
     /**
      * @brief poll() grabs messages from the serial buffer. Will shove them into an array of c-style strings.
-     * @param msgs is a 7x32 2D char array, so 7 arrays of 32 chars each
-     * @return the number of commands received (this count includes the sender name). Return 0 if no commands
+     * @param msgs is a MAX_COMMANDS x MAX_CMD_LEN 2D char array
+     * @return the number of strings received (this count includes the sender name when
+     * rejectOtherNames() is not active). Return 0 if no commands
      */
     int poll(char msgs[][MAX_CMD_LEN]);
 
     /**
      * @brief packages messages and shoots them off into the ethos!
-     * @param first - This function allows you input a variable amount of arguments ( args < MAX_COMMANDS). Start 
-     * with the sender name followed by the commands. **FINAL ARGUMENT MUST BE nullptr!!!!**
+     * @param first - This function allows a variable amount of arguments. Start with the
+     * sender name followed by up to MAX_PAYLOAD_COMMANDS commands.
+     * **FINAL ARGUMENT MUST BE nullptr!!!!**
      */
     void send(const char* first, ...); // up to you what to send, so we'll keep it variable with (...)
     
